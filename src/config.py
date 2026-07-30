@@ -1,6 +1,7 @@
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Definición de la clase de configuración para la aplicación
 class Settings(BaseSettings):
     DB_USER: str
     DB_PASSWORD: SecretStr

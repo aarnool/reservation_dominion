@@ -1,12 +1,12 @@
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import DeclarativeBase
-from config import settings
+from src.config import settings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
 
 #Creación de la URL de conexión a la base de datos utilizando los valores de configuración
 DATABASE_URL = URL.create(
-    drivername="mysql+aiomysql",
+    drivername="postgresql+asyncpg",
     username=settings.DB_USER,
     password=settings.DB_PASSWORD.get_secret_value(),
     host=settings.DB_HOST,

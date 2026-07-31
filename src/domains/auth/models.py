@@ -33,7 +33,7 @@ class Permission(Base):
 
     # Relación muchos a muchos con la tabla de roles a través de la tabla intermedia role_permissions
     roles_association: Mapped[list["RolePermission"]] = relationship(
-        "RolePermission" ,back_populates="permissions", cascade="all, delete-orphan", passive_deletes=True)
+        "RolePermission" ,back_populates="permission", cascade="all, delete-orphan", passive_deletes=True)
   
 
 

@@ -28,5 +28,6 @@ class Reservation(Base):
 
     # Relación muchos a uno con la tabla de usuarios
     user: Mapped["User"] = relationship("User", back_populates="reservations") # type: ignore
+    
     # Relación muchos a uno con la tabla de recursos
     resource: Mapped["Resources"] = relationship("Resources", back_populates="reservations") #type: ignore

@@ -23,4 +23,6 @@ class User(Base):
     notifications: Mapped[list["Notification"]] = relationship( #type: ignore
         "Notification", back_populates="user", cascade="all, delete-orphan", passive_deletes=True) 
 
-    
+    # Relación uno a muchos con la tabla de reservas
+    reservations: Mapped[list["Reservation"]] = relationship( #type: ignore
+        "Reservation", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)

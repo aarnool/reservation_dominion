@@ -2,6 +2,7 @@ from sqlalchemy.engine import URL
 from sqlalchemy.orm import DeclarativeBase
 from src.config import settings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy import MetaData
 
 
 #Creación de la URL de conexión a la base de datos utilizando los valores de configuración
@@ -19,12 +20,27 @@ engine = create_async_engine(
     DATABASE_URL
 )
 
+
+# Creación de la sesión de base de datos asíncrona utilizando el motor de base de datos
 SessionLocal = async_sessionmaker(
     bind=engine,
     autocommit=False, #No se realiza un commit automáticamente después de cada operación de la sesión
     expire_on_commit=False) #No se expiren los objetos de la session después de un commit
 
 
+
+# Definición de la convención de nombres para las restricciones y claves en la base de datos
+convention = {
+    "ix": "ix_%(column_0_label)s", # ix es para índices
+    "uq": "uq_%(table_name)s_%(column_0_name)s", # uq es para claves únicas
+    "ck": "ck_%(table_name)s_%(constraint_name)s", # ck es para restricciones de comprobación
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s", # fk es para claves foráneas
+    "pk": "pk_%(table_name)s" # pk es para claves primarias
+}
+
+metadata_custom = MetaData(naming_convention=convention)
+
+
 # Definición de la clase base para los modelos de SQLAlchemy
 class Base(DeclarativeBase):
-    pass
+    metadata = metadata_custom

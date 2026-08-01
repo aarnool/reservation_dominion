@@ -10,8 +10,13 @@ dependencies = [
     "fastapi[standard]>=0.141.1",
     "language-tool-python>=3.4.0",
     "markdown>=3.10.2",
+    "pwdlib[argon2]>=0.3.0",
     "pydantic>=2.13.4",
+    "pyjwt>=2.13.0",
+    "sqladmin>=0.30.0",
     "sqlalchemy>=2.0.51",
+    "wtform>=1.0",
+    "wtforms>=3.2.2",
 ]
 
 [tool.fastapi]

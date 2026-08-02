@@ -118,6 +118,16 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id', name=op.f('pk_reservations'))
     )
     op.create_index(op.f('ix_reservations_user_id'), 'reservations', ['user_id'], unique=False)
+    op.bulk_insert(
+        sa.table('roles',
+            sa.column('name', sa.String),
+            sa.column('description', sa.Text),
+        ),
+        [
+            {'name': 'user', 'description': 'Usuario regular con permisos limitados'},
+            {'name': 'admin', 'description': 'Administrador del sistema con todos los permisos'}
+        ]
+    )
     # ### end Alembic commands ###
 
 

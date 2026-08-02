@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Body, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status, Query, Security, Path
+from fastapi.security import SecurityScopes
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 from src.dependencies import get_db
 from src.domains.resources.schemas import ResourceCreate, ResourceResponse, ResourceUpdate
-from sqlalchemy import select
-from src.models import Resources, Reservation
-
+from src.domains.resources.service import create_resource, get_resources, update_resource, remove_resource
+from src.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/resources",
@@ -13,137 +13,99 @@ router = APIRouter(
 )
 
 
-# Endpoint para crear un nuevo recurso, recibiendo un objeto ResourceCreate 
 @router.post(
-    "/",
-    summary="Crear un nuevo recurso",
-    response_model=ResourceResponse,
-    status_code=status.HTTP_201_CREATED
+    "/", 
+    response_model=ResourceResponse, 
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear un nuevo recurso"
 )
-async def create_resource(
+async def create_resource_endpoint(
+    resource: Annotated[ResourceCreate, Body(description="Datos del recurso a crear")],
     db: Annotated[AsyncSession, Depends(get_db)],
-    resource: Annotated[ResourceCreate, Body()]
+    current_user: Annotated[dict, Security(get_current_user, scopes=["resources:create"])]
 ):
+    
     """
-    Endpoint para crear un nuevo recurso.
+
+    Crea un nuevo recurso en el sistema.
+    ### Detalles:
+    - **name**: Nombre del recurso (obligatorio)
+    - **description**: Descripción opcional del recurso
+    - **capacity**: Capacidad del recurso (obligatorio)
+
     """
 
-    stmt = select(Resources).where(Resources.name == resource.name)
-    resource_exists = await db.scalar(stmt)
-
-    if resource_exists:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="El recurso ya existe"
-        )
-
-    new_resource = Resources(
-        name=resource.name,
-        description=resource.description,
-        capacity=resource.capacity
-    )
-
-    db.add(new_resource)
-    await db.commit()
-    await db.refresh(new_resource)
-
-    return new_resource
+    return await create_resource(resource=resource, db=db)
+    
 
 
-
-# Endpoint para obtener todos los recursos, con soporte para paginación mediante los parámetros start y limit
 @router.get(
     "/",
-    summary="Obtener todos los recursos",
     response_model=list[ResourceResponse],
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    summary="Obtener una lista de recursos con paginación"
 )
-async def get_resources(
+async def get_resources_endpoint(
     db: Annotated[AsyncSession, Depends(get_db)],
-    start: Annotated[int | None, Query(ge=0)] = 0,
-    limit: Annotated[int | None, Query(ge=1)] = 10
+    current_user: Annotated[dict, Security(get_current_user, scopes=["resources:read"])],
+    start: Annotated[int, Query(
+        description="Índice de inicio para la paginación")] = 0,
+    limit: Annotated[int, Query(
+        description="Número máximo de recursos a devolver")] = 10
+    
 ):
+    
     """
-    Endpoint para obtener todos los recursos.
+
+    Obtiene una lista de recursos desde la base de datos con paginación.
+    ### Detalles:
+    - **start**: Índice de inicio para la paginación (opcional, por defecto 0)
+    - **limit**: Número máximo de recursos a devolver (opcional, por defecto 10)
+
     """
-
-    query = select(Resources).offset(start).limit(limit) # Query para obtener los recursos con paginación
-    result = await db.scalars(query)
-    resources = result.all()
-
-    return resources
+    
+    return await get_resources(db=db, start=start, limit=limit)
 
 
 
-# Endpoint para actualizar un recurso existente, recibiendo un objeto ResourceUpdate
 @router.patch(
     "/{resource_id}",
-    summary="Actualizar un recurso existente",
     response_model=ResourceResponse,
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    summary="Actualizar un recurso existente"
 )
-async def update_resource(
-    resource_id: int,
+async def update_resource_endpoint(
+    resource_id: Annotated[int, Path(description="ID del recurso a actualizar")],
+    resource_data: Annotated[ResourceUpdate, Body(description="Datos actualizados del recurso")],
     db: Annotated[AsyncSession, Depends(get_db)],
-    resource_update: Annotated[ResourceUpdate, Body()]
+    current_user: Annotated[dict, Security(get_current_user, scopes=["resources:update"])]
 ):
     """
-    Endpoint para actualizar un recurso existente.
+    Actualiza un recurso existente en la base de datos.
+    ### Detalles:
+    - **resource_id**: ID del recurso a actualizar (obligatorio)
+    - **resource_data**: Datos actualizados del recurso (obligatorio)
     """
-
-    stmt = select(Resources).where(Resources.id == resource_id)
-    resource = await db.scalar(stmt)
-
-    if not resource:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Recurso no encontrado"
-        )
-
-    # Actualizar los campos del recurso solo si se proporcionan en la solicitud
-    resource_parcial = resource_update.model_dump(exclude_unset=True)
-    for key, value in resource_parcial.items(): # Iterar sobre los campos proporcionados en la solicitud y actualizar el recurso
-        setattr(resource, key, value)
-
-    await db.commit()
-    await db.refresh(resource)
-
-    return resource    
+    
+    return await update_resource(resource_id=resource_id, resource_data=resource_data, db=db)
 
 
 
-# Endpoint para eliminar un recurso existente, verificando si tiene reservas asociadas antes de eliminarlo
 @router.delete(
     "/{resource_id}",
-    summary="Eliminar un recurso existente",
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar un recurso existente"
 )
-async def delete_resource(
-    resource_id: int,
-    db: Annotated[AsyncSession, Depends(get_db)]
+async def delete_resource_endpoint(
+    resource_id: Annotated[int, Path(description="ID del recurso a eliminar")],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[dict, Security(get_current_user, scopes=["resources:delete"])]
 ):
     """
-    Endpoint para eliminar un recurso existente.
+    Elimina un recurso existente de la base de datos.
+    ### Detalles:
+    - **resource_id**: ID del recurso a eliminar (obligatorio)
     """
-
-    stmt = select(Resources).where(Resources.id == resource_id)
-    resource = await db.scalar(stmt)
-
-    if not resource:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Recurso no encontrado"
-        )
-
-    # Verificar si el recurso tiene reservas asociadas antes de eliminarlo
-    reservation_stmt = select(Reservation).where(Reservation.resource_id == resource_id)
-    reservations = await db.execute(reservation_stmt)
-
-    if reservations.scalar_one_or_none():  # Si hay al menos una reserva asociada, no se puede eliminar el recurso
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No se puede eliminar el recurso porque tiene reservas asociadas"
-        )
-
-    await db.delete(resource)
-    await db.commit()
+    
+    await remove_resource(resource_id=resource_id, db=db)
+ 

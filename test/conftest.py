@@ -1,11 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.pool import StaticPool
-from fastapi.testclient import TestClient
 from src.models import *
 from src.database import Base
 from httpx import AsyncClient, ASGITransport
-import pytest
 import pytest_asyncio
 from src.core.security import create_access_token
 from src.domains.auth.service import ROLES_SCOOPES
@@ -16,7 +13,6 @@ DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 engine_test = create_async_engine(
     DATABASE_URL, 
-    echo=True,
     connect_args={"check_same_thread": False},
     poolclass=StaticPool
 )
@@ -28,7 +24,7 @@ TestingSessionLocal = async_sessionmaker(
 
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def reset_rate_limiter():
     """
     Fixture para reiniciar el limitador de velocidad antes de cada prueba.

@@ -79,6 +79,38 @@ async def get_resources(
 
 
 
+# Servicio para obtener un recurso específico por su ID desde la base de datos, verifica si el recurso existe antes de devolverlo
+async def get_resource_by_id(
+    resource_id: int,
+    db: AsyncSession
+):
+    """
+
+    Obtiene un recurso específico por su ID desde la base de datos.
+    Args:
+        resource_id (int): ID del recurso a obtener.
+        db (AsyncSession): Sesión de base de datos asincrónica.
+    Raises:
+        HTTPException: Si el recurso no existe.
+    Returns:
+        Resources: Objeto del recurso obtenido.
+
+
+    """
+
+    smtm = select(Resources).where(Resources.id == resource_id) # Verificar si el recurso existe en la base de datos
+    result = await db.execute(smtm)
+    resource = result.scalar_one_or_none()
+
+    if not resource:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="El recurso no existe."
+        )
+
+    return resource
+
+
 # Servicio para eliminar un recurso de la base de datos, verifica si el recurso existe antes de eliminarlo
 async def remove_resource(
     resource_id: int,

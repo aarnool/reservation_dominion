@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 from src.dependencies import get_db
 from src.domains.resources.schemas import ResourceCreate, ResourceResponse, ResourceUpdate
-from src.domains.resources.service import create_resource, get_resources, update_resource, remove_resource
+from src.domains.resources.service import create_resource, get_resources, update_resource, remove_resource, get_resource_by_id
 from src.dependencies import get_current_user
 
 router = APIRouter(
@@ -66,6 +66,25 @@ async def get_resources_endpoint(
     
     return await get_resources(db=db, start=start, limit=limit)
 
+
+@router.get(
+    "/{resource_id}",
+    response_model=ResourceResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Obtener un recurso específico por ID"
+)
+async def get_resource_by_id_endpoint(
+    resource_id: Annotated[int, Path(description="ID del recurso a obtener")],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[dict, Security(get_current_user, scopes=["resources:read"])]
+):
+    """
+    Obtiene un recurso específico por su ID desde la base de datos.
+    ### Detalles:
+    - **resource_id**: ID del recurso a obtener (obligatorio)
+    """
+    
+    return await get_resource_by_id(resource_id=resource_id, db=db)
 
 
 @router.patch(

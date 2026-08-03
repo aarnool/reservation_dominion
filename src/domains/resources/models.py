@@ -8,7 +8,7 @@ class Resources(Base):
 
     # Definición de las columnas de la tabla
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(128), unique=True, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True) # Texto largo para la descripción del recurso
     capacity: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())

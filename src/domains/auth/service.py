@@ -13,13 +13,7 @@ from src.core.security import verify_password, create_access_token, DUMMY_HASH, 
 from src.core.security import ACCESS_TOKEN_EXPIRE_MINUTES
 from src.domains.auth.schemas import UserCreate, UserResponse
 from src.domains.auth.models import User, Role
-
-
-ROLES_SCOOPES = {
-    "admin": ["resources:create", "resources:read", "resources:update", "resources:delete"],
-    "user": ["resources:read"]
-}
-
+from src.core.permissions import ROLES_SCOOPES
 
 # Autentificador de usuario (Ver si existe en la base de datos y si la contraseña es correcta)
 async def authenticate_user(

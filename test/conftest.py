@@ -5,8 +5,7 @@ from src.database import Base
 from httpx import AsyncClient, ASGITransport
 import pytest_asyncio
 from src.core.security import create_access_token
-from src.domains.auth.service import ROLES_SCOOPES
-
+from src.core.permissions import ROLES_SCOOPES
 
 
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"

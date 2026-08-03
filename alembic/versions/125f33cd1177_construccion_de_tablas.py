@@ -39,9 +39,9 @@ def upgrade() -> None:
     sa.Column('capacity', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_resources'))
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_resources')),
+    sa.UniqueConstraint('name', name=op.f('uq_resources_name'))
     )
-    op.create_index(op.f('ix_resources_name'), 'resources', ['name'], unique=True)
 
 
 
@@ -83,7 +83,6 @@ def upgrade() -> None:
     sa.UniqueConstraint('username', name=op.f('uq_users_username'))
     )
     op.create_index(op.f('ix_users_role_id'), 'users', ['role_id'], unique=False)
-    op.create_index(op.f('ix_users_username'), 'users', ['username'], unique=True)
 
 
 
@@ -91,7 +90,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('message', sa.Text(), nullable=False),
-    sa.Column('type_notification', sa.Enum('INFO', 'RESERVATION', 'ACCOUNT', 'PAYMENT', name='type_notification'), nullable=False),
+    sa.Column('type_notification', sa.Enum('INFO', 'RESERVATION', 'ACCOUNT', 'PAYMENT', name='typenotification'), nullable=False),
     sa.Column('is_read', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
@@ -110,7 +109,7 @@ def upgrade() -> None:
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('start_time', sa.DateTime(), nullable=False),
     sa.Column('end_time', sa.DateTime(), nullable=False),
-    sa.Column('status_reservation', sa.Enum('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', name='status_reservation'), nullable=False),
+    sa.Column('status_reservation', sa.Enum('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', name='statusreservation'), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['resource_id'], ['resources.id'], name=op.f('fk_reservations_resource_id_resources')),

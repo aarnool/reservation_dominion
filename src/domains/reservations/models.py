@@ -15,13 +15,14 @@ class StatusReservation(str, Enum):
 class Reservation(Base):
     __tablename__ = "reservations"
 
+    # Definición de las columnas de la tabla
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     resource_id: Mapped[int] = mapped_column(Integer, ForeignKey("resources.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(124), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
-    start_time: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
-    end_time: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
+    start_time: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)
+    end_time: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)
     status_reservation: Mapped[StatusReservation] = mapped_column(SQLEnum(StatusReservation), nullable=False, default=StatusReservation.PENDING)
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())

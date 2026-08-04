@@ -1,11 +1,36 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, cast, Date
+from sqlalchemy import select
 from src.domains.reservations.models import Reservation
 from src.domains.resources.models import Resources
 from src.domains.reservations.schemas import ReservationCreate, StatusReservation, ReservationUpdate
 from typing import Sequence, List
 from datetime import date, datetime, time, timezone
+
+# Servicio para obtener todas las reservas de todos los usuarios, con paginacion
+async def get_all_reservations(
+    db: AsyncSession,
+    start: int = 0,
+    limit: int = 10
+) -> Sequence[Reservation]:
+    """
+    Obtiene todas las reservas de todos los usuarios desde la base de datos, incluyendo paginación.
+    Args:
+        db (AsyncSession): Sesión de base de datos asincrónica.
+        start (int): Índice inicial para la paginación (por defecto es 0).
+        limit (int): Número máximo de reservas a devolver (por defecto es 10).
+    Returns:
+        Sequence[Reservation]: Una lista de objetos Reservation que representan las reservas obtenidas.
+
+    """
+
+    query = select(Reservation).offset(start).limit(limit)
+    
+    result = await db.execute(query)
+    reservations = result.scalars().all()
+
+    return reservations
+    
 
 
 # Servicio para obtener una lista de reservas desde la base de datos con filtros opcionales y paginación
@@ -66,6 +91,39 @@ async def get_reservations(
     return reservations
 
 
+# Verificar si la fecha del recurso está disponible para la reserva, considerando las reservas existentes y el estado de las mismas
+async def is_resource_available(
+    resource_id: int,
+    start_time: datetime,
+    end_time: datetime,
+    db: AsyncSession
+) -> bool:
+    """
+
+    Verifica si un recurso está disponible para una reserva en un rango de tiempo específico, considerando las reservas existentes y su estado.
+    Args:
+        resource_id (int): ID del recurso a verificar.
+        start_time (datetime): Fecha y hora de inicio de la reserva.
+        end_time (datetime): Fecha y hora de finalización de la reserva.
+        db (AsyncSession): Sesión de base de datos asincrónica.
+    Returns:
+        bool: True si el recurso está disponible, False si no lo está.
+
+    """
+
+    smtm = select(Reservation).where(
+        Reservation.resource_id == resource_id,
+        Reservation.status_reservation.not_in([StatusReservation.CANCELLED, StatusReservation.COMPLETED]),
+        Reservation.end_time > start_time,
+        Reservation.start_time < end_time,
+    )
+
+    result = await db.execute(smtm)
+    overlapping_reservations = result.scalars().all()
+
+    return len(overlapping_reservations) == 0
+
+
 # Servicio para crear una reserva en la base de datos
 async def create_reservation(
     user_id: int,
@@ -83,6 +141,12 @@ async def create_reservation(
         Reservation: Objeto de la reserva creada.
 
     """
+
+    if not await is_resource_available(reservation.resource_id, reservation.start_time, reservation.end_time, db):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El recurso no está disponible en el rango de tiempo especificado"
+        )
     
     resource = await db.get(Resources, reservation.resource_id)
     if not resource:
@@ -126,6 +190,7 @@ async def update_reservation(
 
     """
 
+    
     smtm = select(Reservation).where(Reservation.id == reservation_id) # Verificar si la reserva existe en la base de datos
     result = await db.execute(smtm)
     reservation = result.scalar_one_or_none()
@@ -136,6 +201,21 @@ async def update_reservation(
             detail="Reserva no encontrada"
         )
 
+    if reservation_update.resource_id is not None:
+        resource = await db.get(Resources, reservation_update.resource_id)
+        if not resource:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="El recurso especificado no existe"
+            )
+    
+    if reservation_update.star_time is not None and reservation_update.end_time is not None:
+        if not await is_resource_available(reservation.resource_id, reservation_update.star_time, reservation_update.end_time, db):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="El recurso no está disponible en el rango de tiempo especificado"
+                )
+    
     # Actualizar los campos proporcionados en la solicitud
     reservation_update_data = reservation_update.model_dump(exclude_unset=True)
     for key, value in reservation_update_data.items():
@@ -179,6 +259,44 @@ async def approve_reservation(
 
     # Actualizar el estado de la reserva a "confirmada"
     reservation.status_reservation = StatusReservation.CONFIRMED
+
+    await db.commit()
+    await db.refresh(reservation)
+
+    return reservation
+
+
+
+async def cancel_own_reservation(
+    reservation_id: int,
+    user_id: int,
+    db: AsyncSession
+) -> Reservation:
+    """
+    Cancela una reserva existente realizada por el usuario autenticado.
+    Args:
+        reservation_id (int): ID de la reserva a cancelar.
+        user_id (int): ID del usuario autenticado que realiza la cancelación.
+        db (AsyncSession): Sesión de base de datos asincrónica.
+    Raises:
+        HTTPException: Si la reserva no existe o no pertenece al usuario autenticado.
+    Returns:
+        Reservation: Objeto de la reserva cancelada.
+
+    """
+
+    smtm = select(Reservation).where(Reservation.id == reservation_id, Reservation.user_id == user_id)
+    result = await db.execute(smtm)
+    reservation = result.scalar_one_or_none()
+
+    if not reservation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reserva no encontrada o no pertenece al usuario autenticado"
+        )
+
+    # Actualizar el estado de la reserva a "cancelada"
+    reservation.status_reservation = StatusReservation.CANCELLED
 
     await db.commit()
     await db.refresh(reservation)

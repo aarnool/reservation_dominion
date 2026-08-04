@@ -151,3 +151,55 @@ async def approve_reservation_endpoint(
     return await service.approve_reservation(
         reservation_id=reservation_id, 
         db=db)
+
+
+
+
+@router.get(
+    "/all",
+    tags=["Admin"],
+    response_model=list[ReservationResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Obtiene todas las reservas del sistema (solo para administradores)"
+)
+async def get_all_reservations_endpoint(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[dict, Security(get_current_user, scopes=["reservations:read_all"])]
+):
+    
+    """
+
+    Obtiene todas las reservas del sistema, sin importar el usuario que las haya creado. Este endpoint es exclusivo para administradores.
+    ### Detalles:
+    - **current_user**: Usuario autenticado con rol de administrador (obligatorio)
+
+    """
+    
+    return await service.get_all_reservations(db=db)
+
+
+
+# Endpoint para cancelar una reserva existente
+# @router.patch(
+#     "/{reservation_id}/cancel",
+#     response_model=ReservationResponse,
+#     status_code=status.HTTP_200_OK,
+#     summary="Cancela una reserva existente"
+# )
+# async def cancel_reservation_endpoint(
+#     reservation_id: Annotated[int, Path(description="ID de la reserva a cancelar")],
+#     db: Annotated[AsyncSession, Depends(get_db)],
+#     current_user: Annotated[dict, Security(get_current_user, scopes=["reservations:cancel"])]
+# ):
+    
+#     """
+
+#     Cancela una reserva existente en el sistema.
+#     ### Detalles:
+#     - **reservation_id**: ID de la reserva a cancelar (obligatorio)
+
+#     """
+    
+#     return await service.cancel_reservation(
+#         reservation_id=reservation_id, 
+#         db=db)

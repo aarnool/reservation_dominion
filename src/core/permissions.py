@@ -10,7 +10,8 @@ ROLES_SCOOPES = {
         "reservations:read", 
         "reservations:update", 
         "reservations:delete",
-        "reservations:approve"
+        "reservations:approve",
+        "reservations:read_all"
     ],
     
     "user": [
@@ -20,6 +21,7 @@ ROLES_SCOOPES = {
         "reservations:create", 
         "reservations:read", 
         "reservations:update", 
-        "reservations:delete"
+        "reservations:delete",
+        "reservations:cancel"
     ]
 }

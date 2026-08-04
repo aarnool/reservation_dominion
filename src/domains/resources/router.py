@@ -15,6 +15,7 @@ router = APIRouter(
 
 @router.post(
     "/", 
+    tags=["admin"],
     response_model=ResourceResponse, 
     status_code=status.HTTP_201_CREATED,
     summary="Crear un nuevo recurso"
@@ -89,6 +90,7 @@ async def get_resource_by_id_endpoint(
 
 @router.patch(
     "/{resource_id}",
+    tags=["admin"],
     response_model=ResourceResponse,
     status_code=status.HTTP_200_OK,
     summary="Actualizar un recurso existente"
@@ -112,6 +114,7 @@ async def update_resource_endpoint(
 
 @router.delete(
     "/{resource_id}",
+    tags=["admin"],
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Eliminar un recurso existente"
 )

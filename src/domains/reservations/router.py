@@ -91,6 +91,7 @@ async def create_reservation_endpoint(
 
 @router.patch(
     "/{reservation_id}",
+    tags=["admin"],
     response_model=ReservationResponse,
     status_code=status.HTTP_200_OK,
     summary="Aprobar una reserva ya existente"

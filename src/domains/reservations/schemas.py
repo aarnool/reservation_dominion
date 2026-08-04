@@ -59,7 +59,7 @@ class ReservationUpdate(BaseModel):
     resource_id: int | None = Field(
         default=None,
         description="Identificador del recurso a reservar")
-    star_time: datetime | None = Field(
+    start_time: datetime | None = Field(
         default=None,
         description="Fecha y hora de inicio de la reserva")
     end_time: datetime | None = Field(

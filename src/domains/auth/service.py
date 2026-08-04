@@ -37,7 +37,7 @@ async def authenticate_user(
 
     smtm = (
         select(User)
-        .options(selectinload(User.role))
+        .options(selectinload(User.role))  # Cargar la relación de rol del usuario para usarse en la generación del token
         .where(User.username == username)
     )
     

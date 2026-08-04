@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, cast, Date
 from src.domains.reservations.models import Reservation
 from src.domains.resources.models import Resources
-from src.domains.reservations.schemas import ReservationCreate, StatusReservation
+from src.domains.reservations.schemas import ReservationCreate, StatusReservation, ReservationUpdate
 from typing import Sequence, List
 from datetime import date, datetime, time, timezone
 
@@ -83,21 +83,7 @@ async def create_reservation(
         Reservation: Objeto de la reserva creada.
 
     """
-    start_t = reservation.start_time
-    end_t = reservation.end_time
-
-    # Nos aseguramos de inyectar UTC si no viene especificada.
-    if start_t.tzinfo is None:
-        start_t = start_t.replace(tzinfo=timezone.utc)
-    if end_t.tzinfo is None:
-        end_t = end_t.replace(tzinfo=timezone.utc)
-
-    # De paso, validamos que el inicio sea antes del fin para evitar errores lógicos.
-    if start_t > end_t:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La fecha de inicio debe ser anterior a la fecha de finalización"
-        )
+    
     resource = await db.get(Resources, reservation.resource_id)
     if not resource:
         raise HTTPException(
@@ -110,8 +96,8 @@ async def create_reservation(
         resource_id=reservation.resource_id,
         title=reservation.title,
         description=reservation.description,
-        start_time=start_t,
-        end_time=end_t
+        start_time=reservation.start_time,
+        end_time=reservation.end_time,
     )
 
     db.add(new_reservation)
@@ -119,6 +105,48 @@ async def create_reservation(
     await db.refresh(new_reservation)
 
     return new_reservation
+
+# Servicio para actualizar una reserva existente en la base de datos
+async def update_reservation(
+    reservation_id: int,
+    reservation_update: ReservationUpdate,
+    db: AsyncSession
+) -> Reservation:
+    """
+
+    Actualiza una reserva existente en la base de datos.
+    Args:
+        reservation_id (int): ID de la reserva a actualizar.
+        reservation_update (ReservationUpdate): Datos de la reserva a actualizar.
+        db (AsyncSession): Sesión de base de datos asincrónica.
+    Raises:
+        HTTPException: Si la reserva no existe.
+    Returns:
+        Reservation: Objeto de la reserva actualizada.
+
+    """
+
+    smtm = select(Reservation).where(Reservation.id == reservation_id) # Verificar si la reserva existe en la base de datos
+    result = await db.execute(smtm)
+    reservation = result.scalar_one_or_none()
+
+    if not reservation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reserva no encontrada"
+        )
+
+    # Actualizar los campos proporcionados en la solicitud
+    reservation_update_data = reservation_update.model_dump(exclude_unset=True)
+    for key, value in reservation_update_data.items():
+        setattr(reservation, key, value)
+
+    await db.commit()
+    await db.refresh(reservation)
+
+    return reservation
+    
+
 
 
 # Servicio para actualizar el estado de una reserva existente a confirmada

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Body, Depends, HTTPException, status, Security, Query, Path
-from src.domains.reservations.schemas import ReservationResponse, ReservationCreate, StatusReservation
+from src.domains.reservations.schemas import ReservationResponse, ReservationCreate, StatusReservation, ReservationUpdate
 from src.dependencies import get_db, get_current_user
 from typing import Annotated, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.domains.reservations.service import get_reservations, create_reservation, approve_reservation
+from src.domains.reservations import service
 from datetime import date
 
 router = APIRouter(
@@ -12,6 +12,7 @@ router = APIRouter(
 )
 
 
+# Endpoint para obtener reservas con múltiples filtros opcionales (fecha, estado, recurso)
 @router.get(
     "/",
     response_model=list[ReservationResponse],
@@ -48,7 +49,7 @@ async def get_reservations_endpoint(
 
     """
     
-    return await get_reservations(
+    return await service.get_reservations(
         user_id=current_user["id"], 
         db=db, 
         status_filter=status_filter, 
@@ -61,6 +62,7 @@ async def get_reservations_endpoint(
 
 
 
+# Endpoint para crear una nueva reserva
 @router.post(
     "/",
     response_model=ReservationResponse,
@@ -85,10 +87,46 @@ async def create_reservation_endpoint(
 
     """
     
-    return await create_reservation(user_id=current_user["id"], reservation=reservation, db=db)
+    return await service.create_reservation(
+        user_id=current_user["id"], 
+        reservation=reservation, 
+        db=db)
 
 
 
+# Endpoint para actualizar una reserva existente (solo ciertos campos)
+@router.patch(
+    "/{reservation_id}",
+    response_model=ReservationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Actualiza una reserva existente (solo ciertos campos)"
+)
+async def update_reservation_endpoint(
+    reservation_id: Annotated[int, Path(description="ID de la reserva a actualizar")],
+    reservation_update: Annotated[ReservationUpdate, Body(description="Datos de la reserva a actualizar (solo ciertos campos)")],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[dict, Security(get_current_user, scopes=["reservations:update"])]
+):
+    
+    """
+
+    Actualiza una reserva existente en el sistema, permitiendo modificar solo ciertos campos.
+    ### Detalles:
+    - **reservation_id**: ID de la reserva a actualizar (obligatorio)
+    - **title**: Nuevo título de la reserva (opcional)
+    - **description**: Nueva descripción de la reserva (opcional)
+    - **end_time**: Nueva fecha y hora de fin de la reserva (opcional)
+
+    """
+    
+    return await service.update_reservation(
+        reservation_id=reservation_id, 
+        reservation_update=reservation_update, 
+        db=db)
+
+
+
+# Endpoint para actualizar el estado de una reserva existente a aprobada
 @router.patch(
     "/{reservation_id}",
     tags=["Admin"],
@@ -96,7 +134,7 @@ async def create_reservation_endpoint(
     status_code=status.HTTP_200_OK,
     summary="Aprobar una reserva ya existente"
 )
-async def update_reservation_endpoint(
+async def approve_reservation_endpoint(
     reservation_id: Annotated[int, Path(description="ID de la reserva a actualizar")],
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[dict, Security(get_current_user, scopes=["reservations:approve"])]
@@ -110,4 +148,6 @@ async def update_reservation_endpoint(
 
     """
     
-    return await approve_reservation(reservation_id=reservation_id, db=db)
+    return await service.approve_reservation(
+        reservation_id=reservation_id, 
+        db=db)

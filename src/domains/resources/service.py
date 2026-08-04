@@ -98,9 +98,9 @@ async def get_resource_by_id(
 
     """
 
-    smtm = select(Resources).where(Resources.id == resource_id) # Verificar si el recurso existe en la base de datos
-    result = await db.execute(smtm)
-    resource = result.scalar_one_or_none()
+    # smtm = select(Resources).where(Resources.id == resource_id) # Verificar si el recurso existe en la base de datos
+    # result = await db.execute(smtm)
+    resource = await db.get(Resources, resource_id)
 
     if not resource:
         raise HTTPException(

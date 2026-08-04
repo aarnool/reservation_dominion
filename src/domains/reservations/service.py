@@ -174,7 +174,8 @@ async def create_reservation(
 async def update_reservation(
     reservation_id: int,
     reservation_update: ReservationUpdate,
-    db: AsyncSession
+    db: AsyncSession,
+    user_id: int
 ) -> Reservation:
     """
 
@@ -191,7 +192,9 @@ async def update_reservation(
     """
 
     
-    smtm = select(Reservation).where(Reservation.id == reservation_id) # Verificar si la reserva existe en la base de datos
+    smtm = select(Reservation).where(
+        Reservation.id == reservation_id,
+        Reservation.user_id == user_id) # Verificar si la reserva existe en la base de datos
     result = await db.execute(smtm)
     reservation = result.scalar_one_or_none()
 
@@ -209,8 +212,8 @@ async def update_reservation(
                 detail="El recurso especificado no existe"
             )
     
-    if reservation_update.star_time is not None and reservation_update.end_time is not None:
-        if not await is_resource_available(reservation.resource_id, reservation_update.star_time, reservation_update.end_time, db):
+    if reservation_update.start_time is not None and reservation_update.end_time is not None:
+        if not await is_resource_available(reservation.resource_id, reservation_update.start_time, reservation_update.end_time, db):
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="El recurso no está disponible en el rango de tiempo especificado"

@@ -1,36 +1,69 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, cast, Date
 from src.domains.reservations.models import Reservation
+from src.domains.resources.models import Resources
 from src.domains.reservations.schemas import ReservationCreate, StatusReservation
-from typing import List
+from typing import Sequence, List
+from datetime import date, datetime, time, timezone
 
 
-# Servicio para obtener una lista de reservas desde la base de datos con paginación
+# Servicio para obtener una lista de reservas desde la base de datos con filtros opcionales y paginación
 async def get_reservations(
     user_id: int,
     db: AsyncSession,
+    status_filter: StatusReservation | None = None,
+    filter_date: date | None = None,
+    resource_ids: List[int] | None = None,
+    resource_name: str | None = None,
     start: int = 0,
     limit: int = 10
-) -> List[Reservation]:
+) -> Sequence[Reservation]:
     """
 
-    Obtiene una lista de reservas desde la base de datos con paginación para un usuario específico.
+    Obtiene una lista de reservas desde la base de datos, con la posibilidad de filtrar por estado, fecha y recurso, incluyendo paginación para un usuario específico.
     Args:
         user_id (int): ID del usuario autenticado.
         db (AsyncSession): Sesión de base de datos asincrónica.
+        status_filter (StatusReservation | None): Filtro opcional por estado de la reserva.
+        filter_date (date | None): Filtro opcional por fecha exacta de la reserva.
+        resource_ids (List[int] | None): Filtro opcional por múltiples identificadores de recurso.
+        resource_name (str | None): Filtro opcional por nombre del recurso asociado (búsqueda parcial).
         start (int): Índice inicial para la paginación (por defecto es 0).
         limit (int): Número máximo de reservas a devolver (por defecto es 10).
     Returns:
-        List[Reservation]: Una lista de objetos Reservation que representan las reservas obtenidas.
+        Sequence[Reservation]: Una lista de objetos Reservation que representan las reservas obtenidas.
 
     """
 
-    smtm = select(Reservation).where(Reservation.user_id == user_id).offset(start).limit(limit)
-    result = await db.execute(smtm)
+    query = select(Reservation).where(Reservation.user_id == user_id)
+
+    if status_filter is not None:
+        query = query.where(Reservation.status_reservation == status_filter)
+    
+    if filter_date is not None:
+      
+        # Convertimos la fecha a un rango de tiempo para filtrar las reservas que ocurren en ese día específico
+        start_of_day = datetime.combine(filter_date, time.min).replace(tzinfo=timezone.utc)
+        end_of_day = datetime.combine(filter_date, time.max).replace(tzinfo=timezone.utc)
+        
+        query = query.where(
+            Reservation.start_time >= start_of_day,
+            Reservation.start_time <= end_of_day
+        )
+    
+    if resource_ids is not None:
+        query = query.where(Reservation.resource_id.in_(resource_ids))
+
+    if resource_name is not None:
+        query = query.join(Resources).where(Resources.name.ilike(f"%{resource_name}%"))
+
+    query = query.offset(start).limit(limit)
+    
+    result = await db.execute(query)
     reservations = result.scalars().all()
 
-    return reservations #type: ignore
+    return reservations
 
 
 # Servicio para crear una reserva en la base de datos
@@ -50,14 +83,29 @@ async def create_reservation(
         Reservation: Objeto de la reserva creada.
 
     """
+    start_t = reservation.start_time
+    end_t = reservation.end_time
+
+    # Nos aseguramos de inyectar UTC si no viene especificada.
+    if start_t.tzinfo is None:
+        start_t = start_t.replace(tzinfo=timezone.utc)
+    if end_t.tzinfo is None:
+        end_t = end_t.replace(tzinfo=timezone.utc)
+
+    # De paso, validamos que el inicio sea antes del fin para evitar errores lógicos.
+    if start_t > end_t:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La fecha de inicio debe ser anterior a la fecha de finalización"
+        )
 
     new_reservation = Reservation(
         user_id=user_id,
         resource_id=reservation.resource_id,
         title=reservation.title,
         description=reservation.description,
-        start_time=reservation.start_time,
-        end_time=reservation.end_time
+        start_time=start_t,
+        end_time=end_t
     )
 
     db.add(new_reservation)

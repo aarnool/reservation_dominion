@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Body, Depends, HTTPException, status, Security, Query, Path
-from src.domains.reservations.schemas import ReservationResponse, ReservationCreate
+from src.domains.reservations.schemas import ReservationResponse, ReservationCreate, StatusReservation
 from src.dependencies import get_db, get_current_user
-from typing import Annotated
+from typing import Annotated, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.domains.reservations.service import get_reservations, create_reservation, approve_reservation
+from datetime import date
 
 router = APIRouter(
     prefix="/reservations",
@@ -15,11 +16,19 @@ router = APIRouter(
     "/",
     response_model=list[ReservationResponse],
     status_code=status.HTTP_200_OK,
-    summary="Obtiene todas las reservas del usuario autenticado"
+    summary="Obtiene reservas con múltiples filtros opcionales (fecha, estado, recurso)"
 )
 async def get_reservations_endpoint(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[dict, Security(get_current_user, scopes=["reservations:read"])],
+    status_filter: Annotated[StatusReservation | None, Query(
+        alias="status", description="Estado por el que filtrar las reservas (opcional)")] = None,
+    filter_date: Annotated[date | None, Query(
+        alias="date", description="Fecha exacta por la que filtrar las reservas en formato YYYY-MM-DD (opcional)")] = None,
+    resource_ids: Annotated[List[int] | None, Query(
+        alias="resource_id", description="Filtro opcional por múltiples IDs de recursos (opcional)")] = None,
+    resource_name: Annotated[str | None, Query(
+        alias="resource_name", description="Filtro opcional por nombre del recurso reservado (búsqueda parcial)")] = None,
     start: Annotated[int, Query(
         description="Índice de inicio para la paginación")] = 0,
     limit: Annotated[int, Query(
@@ -28,14 +37,27 @@ async def get_reservations_endpoint(
     
     """
 
-    Obtiene todas las reservas asociadas al usuario autenticado.
+    Obtiene las reservas asociadas al usuario autenticado, permitiendo el filtrado opcional por múltiples campos al mismo tiempo.
     ### Detalles:
-    - **start**: Índice de inicio para la paginación (opcional, por defecto 0)
-    - **limit**: Número máximo de reservas a devolver (opcional, por defecto 10)
+    - **status**: Estado por el cual se desean filtrar las reservas (opcional).
+    - **date**: Fecha exacta por la cual filtrar (opcional).
+    - **resource_id**: Uno o múltiples IDs de recursos para filtrar (opcional, se puede repetir: ?resource_id=1&resource_id=2).
+    - **resource_name**: Nombre o fragmento del nombre del recurso reservado para filtrar (opcional).
+    - **start**: Índice de inicio para la paginación (opcional, por defecto 0).
+    - **limit**: Número máximo de reservas a devolver (opcional, por defecto 10).
 
     """
     
-    return await get_reservations(user_id=current_user["id"], db=db, start=start, limit=limit)
+    return await get_reservations(
+        user_id=current_user["id"], 
+        db=db, 
+        status_filter=status_filter, 
+        filter_date=filter_date, 
+        resource_ids=resource_ids, 
+        resource_name=resource_name,
+        start=start, 
+        limit=limit
+    )
 
 
 

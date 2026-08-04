@@ -128,7 +128,7 @@ async def update_reservation_endpoint(
 
 # Endpoint para actualizar el estado de una reserva existente a aprobada
 @router.patch(
-    "/{reservation_id}",
+    "/{reservation_id}/approve",
     tags=["Admin"],
     response_model=ReservationResponse,
     status_code=status.HTTP_200_OK,
@@ -180,26 +180,27 @@ async def get_all_reservations_endpoint(
 
 
 # Endpoint para cancelar una reserva existente
-# @router.patch(
-#     "/{reservation_id}/cancel",
-#     response_model=ReservationResponse,
-#     status_code=status.HTTP_200_OK,
-#     summary="Cancela una reserva existente"
-# )
-# async def cancel_reservation_endpoint(
-#     reservation_id: Annotated[int, Path(description="ID de la reserva a cancelar")],
-#     db: Annotated[AsyncSession, Depends(get_db)],
-#     current_user: Annotated[dict, Security(get_current_user, scopes=["reservations:cancel"])]
-# ):
+@router.patch(
+    "/{reservation_id}/cancel",
+    response_model=ReservationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cancela una reserva existente"
+)
+async def cancel_reservation_endpoint(
+    reservation_id: Annotated[int, Path(description="ID de la reserva a cancelar")],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[dict, Security(get_current_user, scopes=["reservations:cancel"])]
+):
     
-#     """
+    """
 
-#     Cancela una reserva existente en el sistema.
-#     ### Detalles:
-#     - **reservation_id**: ID de la reserva a cancelar (obligatorio)
+    Cancela una reserva existente en el sistema.
+    ### Detalles:
+    - **reservation_id**: ID de la reserva a cancelar (obligatorio)
 
-#     """
+    """
     
-#     return await service.cancel_reservation(
-#         reservation_id=reservation_id, 
-#         db=db)
+    return await service.cancel_own_reservation(
+        user_id=current_user["id"],
+        reservation_id=reservation_id, 
+        db=db)

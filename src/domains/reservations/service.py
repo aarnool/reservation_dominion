@@ -295,6 +295,13 @@ async def cancel_own_reservation(
             detail="Reserva no encontrada o no pertenece al usuario autenticado"
         )
 
+
+    if reservation.status_reservation == StatusReservation.CANCELLED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La reserva ya ha sido cancelada"
+        )
+    
     # Actualizar el estado de la reserva a "cancelada"
     reservation.status_reservation = StatusReservation.CANCELLED
 

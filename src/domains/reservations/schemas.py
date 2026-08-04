@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, AwareDatetime
 from datetime import datetime
 from src.domains.reservations.models import StatusReservation
 
@@ -10,18 +10,18 @@ class ReservationBase(BaseModel):
     description: str | None = Field(
         default=None,
         description="Descripción del recurso") 
-    start_time: datetime = Field(
+    resource_id: int = Field(
+            description="Identificador del recurso a reservar") 
+    start_time: AwareDatetime = Field(
         description="Fecha y hora de inicio de la reserva")
-    end_time: datetime = Field(
+    end_time: AwareDatetime = Field(
         description="Fecha y hora de finalización de la reserva")
     
 
 
 # Esquemas para la creación de una reserva inyectable para usar en los endpoints Body
 class ReservationCreate(ReservationBase):
-
-    resource_id: int = Field(
-        description="Identificador del recurso a reservar")
+    pass
 
 
 # Esquemas para la respuesta de una reserva, incluyendo campos adicionales que deberia tener una reserva en la base de datos
@@ -56,9 +56,6 @@ class ReservationUpdate(BaseModel):
     description: str | None = Field(
         default=None,
         description="Descripción del recurso") 
-    start_time: datetime | None = Field(
-        default=None,
-        description="Fecha y hora de inicio de la reserva")
     end_time: datetime | None = Field(
         default=None,
         description="Fecha y hora de finalización de la reserva")

@@ -122,7 +122,9 @@ async def update_reservation_endpoint(
     return await service.update_reservation(
         reservation_id=reservation_id, 
         reservation_update=reservation_update, 
-        db=db)
+        db=db,
+        user_id=current_user["id"]
+    )
 
 
 
@@ -164,7 +166,12 @@ async def approve_reservation_endpoint(
 )
 async def get_all_reservations_endpoint(
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[dict, Security(get_current_user, scopes=["reservations:read_all"])]
+    current_user: Annotated[dict, Security(get_current_user, scopes=["reservations:read_all"])],
+    start: Annotated[int, Query(
+        description="Índice de inicio para la paginación")] = 0,
+    limit: Annotated[int, Query(
+        description="Número máximo de reservas a devolver (opcional)")] = 10,
+    
 ):
     
     """
@@ -175,7 +182,11 @@ async def get_all_reservations_endpoint(
 
     """
     
-    return await service.get_all_reservations(db=db)
+    return await service.get_all_reservations(
+        db=db,
+        start=start,
+        limit=limit
+    )
 
 
 

@@ -8,7 +8,7 @@ from src.domains.auth.schemas import UserCreate, UserResponse
 
 router = APIRouter(
     prefix="/auth",
-    tags=["auth"]
+    tags=["Autenticación"]
 )
 
 @router.post(

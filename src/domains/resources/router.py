@@ -9,13 +9,13 @@ from src.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/resources",
-    tags=["Reservas"]
+    tags=["Recursos"]
 )
 
 
 @router.post(
     "/", 
-    tags=["admin"],
+    tags=["Admin"],
     response_model=ResourceResponse, 
     status_code=status.HTTP_201_CREATED,
     summary="Crear un nuevo recurso"
@@ -90,7 +90,7 @@ async def get_resource_by_id_endpoint(
 
 @router.patch(
     "/{resource_id}",
-    tags=["admin"],
+    tags=["Admin"],
     response_model=ResourceResponse,
     status_code=status.HTTP_200_OK,
     summary="Actualizar un recurso existente"
@@ -114,7 +114,7 @@ async def update_resource_endpoint(
 
 @router.delete(
     "/{resource_id}",
-    tags=["admin"],
+    tags=["Admin"],
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Eliminar un recurso existente"
 )

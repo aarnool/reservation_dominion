@@ -53,7 +53,7 @@ async def create_resource(
 
 
 
-# Servicio para obtener una lista de recursos desde la base de datos con paginación 
+# Servicio para obtener una lista de recursos desde la base de datos con paginación
 async def get_resources(
     db: AsyncSession,
     start: int = 0, 

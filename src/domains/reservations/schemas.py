@@ -56,9 +56,13 @@ class ReservationUpdate(BaseModel):
     description: str | None = Field(
         default=None,
         description="Descripción del recurso") 
+    resource_id: int | None = Field(
+        default=None,
+        description="Identificador del recurso a reservar")
+    star_time: datetime | None = Field(
+        default=None,
+        description="Fecha y hora de inicio de la reserva")
     end_time: datetime | None = Field(
         default=None,
         description="Fecha y hora de finalización de la reserva")
-    status_reservation: StatusReservation | None = Field(
-        default=None,
-        description="Estado de la reserva")
+    

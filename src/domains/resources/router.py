@@ -42,6 +42,7 @@ async def create_resource_endpoint(
 
 @router.get(
     "/",
+    tags=["Admin"],
     response_model=list[ResourceResponse],
     status_code=status.HTTP_200_OK,
     summary="Obtener una lista de recursos con paginación"

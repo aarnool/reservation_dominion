@@ -65,6 +65,7 @@ async def get_reservations_endpoint(
 # Endpoint para crear una nueva reserva
 @router.post(
     "/",
+    tags=["Admin"],
     response_model=ReservationResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Crea una nueva reserva"
@@ -97,6 +98,7 @@ async def create_reservation_endpoint(
 # Endpoint para actualizar una reserva existente (solo ciertos campos)
 @router.patch(
     "/{reservation_id}",
+    tags=["Admin"],
     response_model=ReservationResponse,
     status_code=status.HTTP_200_OK,
     summary="Actualiza una reserva existente (solo ciertos campos)"
@@ -193,6 +195,7 @@ async def get_all_reservations_endpoint(
 # Endpoint para cancelar una reserva existente
 @router.patch(
     "/{reservation_id}/cancel",
+    tags=["Admin"],
     response_model=ReservationResponse,
     status_code=status.HTTP_200_OK,
     summary="Cancela una reserva existente"

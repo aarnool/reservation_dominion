@@ -148,18 +148,21 @@ async def create_reservation(
 
     """
 
+    # Validar que la fecha de inicio sea anterior a la fecha de fin
     if reservation.start_time >= reservation.end_time:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="La fecha de inicio debe ser anterior a la fecha de fin"
         )
 
+    # Verificar si el recurso está disponible en el rango de tiempo especificado
     if not await is_resource_available(reservation.resource_id, reservation.start_time, reservation.end_time, db):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="El recurso no está disponible en el rango de tiempo especificado"
         )
-    
+
+    # Verificar si el recurso existe en la base de datos
     resource = await db.get(Resources, reservation.resource_id)
     if not resource:
         raise HTTPException(

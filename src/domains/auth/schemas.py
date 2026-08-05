@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
 
 # Schema base para la autenticación de usuarios
@@ -7,7 +7,7 @@ class UserBase(BaseModel):
         description="Nombre de usuario único para el sistema",
         examples=["adsawdsa92"]
     )
-    email: str = Field(
+    email: EmailStr = Field(
         description="Correo electrónico único del usuario",
         examples=["adsawdsa92@gmail.com"]
     )
@@ -24,6 +24,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(
         description="Contraseña del usuario",
+        min_length=8,
         examples=["123456"]
     )
 

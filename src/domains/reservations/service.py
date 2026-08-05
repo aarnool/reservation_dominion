@@ -148,6 +148,12 @@ async def create_reservation(
 
     """
 
+    if reservation.start_time >= reservation.end_time:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La fecha de inicio debe ser anterior a la fecha de fin"
+        )
+
     if not await is_resource_available(reservation.resource_id, reservation.start_time, reservation.end_time, db):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -220,11 +226,18 @@ async def update_reservation(
                 detail="El recurso especificado no existe"
             )
 
+    # Si se proporciona un nuevo start_time o end_time, verificar si el recurso está disponible en el rango de tiempo especificado
     start_time = reservation_update.start_time or reservation.start_time
     end_time = reservation_update.end_time or reservation.end_time
 
+    # Validar que la fecha de inicio sea anterior a la fecha de fin
+    if start_time >= end_time: # type: ignore
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La fecha de inicio debe ser anterior a la fecha de fin"
+        )
+
     if reservation_update.start_time is not None or reservation_update.end_time is not None:
-        # Se excluye la reserva actual para que no choque consigo misma al verificar disponibilidad
         if not await is_resource_available(
             resource_id=reservation.resource_id, 
             db=db, 
@@ -273,12 +286,20 @@ async def approve_reservation(
     result = await db.execute(smtm)
     reservation = result.scalar_one_or_none()
 
+   
+
     if not reservation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Reserva no encontrada"
         )
 
+    if reservation.status_reservation == StatusReservation.CONFIRMED or reservation.status_reservation == StatusReservation.CANCELLED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="La reserva ya ha sido confirmada o cancelada"
+        )
+    
     # Actualizar el estado de la reserva a "confirmada"
     reservation.status_reservation = StatusReservation.CONFIRMED
 

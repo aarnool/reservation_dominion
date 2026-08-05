@@ -30,6 +30,8 @@ async def reset_rate_limiter():
     """
     pass
 
+
+# Fixture para proporcionar una sesión de base de datos para las pruebas, Se ciera y limpia la base de datos después de cada prueba
 @pytest_asyncio.fixture()
 async def db_session():
     """
@@ -55,6 +57,7 @@ async def db_session():
         await conn.run_sync(Base.metadata.drop_all)
 
 
+# Fixture para proporcionar un cliente de prueba de FastAPI con la sesión de base de datos inyectada
 @pytest_asyncio.fixture()
 async def client(db_session: AsyncSession):
     """
@@ -78,6 +81,7 @@ async def client(db_session: AsyncSession):
     app.dependency_overrides.clear()
 
 
+# Fixture para un admin con sesión ya abierta y con un token de Administrador
 @pytest_asyncio.fixture()
 async def admin_client(client: AsyncClient):
     """Fixture que proporciona un cliente con sesión de Administrador."""
@@ -90,6 +94,9 @@ async def admin_client(client: AsyncClient):
     client.cookies.set("auth_token", token)
     return client
 
+
+
+# Fixture para un cliente con sesión ya abierta y con un token de Usuario normal
 @pytest_asyncio.fixture()
 async def user_client(client: AsyncClient):
     """Fixture que proporciona un cliente con sesión de Usuario normal."""

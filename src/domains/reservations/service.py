@@ -96,7 +96,8 @@ async def is_resource_available(
     resource_id: int,
     start_time: datetime,
     end_time: datetime,
-    db: AsyncSession
+    db: AsyncSession,
+    exclude_reservation_id: int | None = None  # ID de la reserva a excluir (útil al actualizar para no chocar consigo misma)
 ) -> bool:
     """
 
@@ -106,6 +107,7 @@ async def is_resource_available(
         start_time (datetime): Fecha y hora de inicio de la reserva.
         end_time (datetime): Fecha y hora de finalización de la reserva.
         db (AsyncSession): Sesión de base de datos asincrónica.
+        exclude_reservation_id (int | None): ID de la reserva a excluir de la verificación (por defecto None). Se usa al actualizar una reserva para que no choque consigo misma.
     Returns:
         bool: True si el recurso está disponible, False si no lo está.
 
@@ -117,6 +119,10 @@ async def is_resource_available(
         Reservation.end_time > start_time,
         Reservation.start_time < end_time,
     )
+
+    # Si se proporciona un ID de reserva a excluir, lo filtramos para que no choque consigo misma al actualizar
+    if exclude_reservation_id is not None:
+        smtm = smtm.where(Reservation.id != exclude_reservation_id)
 
     result = await db.execute(smtm)
     overlapping_reservations = result.scalars().all()
@@ -198,12 +204,14 @@ async def update_reservation(
     result = await db.execute(smtm)
     reservation = result.scalar_one_or_none()
 
+    # Si la reserva no existe, lanzar una excepción HTTP 404
     if not reservation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Reserva no encontrada"
         )
 
+    # Si se proporciona un nuevo resource_id, verificar si el recurso existe
     if reservation_update.resource_id is not None:
         resource = await db.get(Resources, reservation_update.resource_id)
         if not resource:
@@ -211,9 +219,20 @@ async def update_reservation(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="El recurso especificado no existe"
             )
-    
-    if reservation_update.start_time is not None and reservation_update.end_time is not None:
-        if not await is_resource_available(reservation.resource_id, reservation_update.start_time, reservation_update.end_time, db):
+
+    start_time = reservation_update.start_time or reservation.start_time
+    end_time = reservation_update.end_time or reservation.end_time
+
+    if reservation_update.start_time is not None or reservation_update.end_time is not None:
+        # Se excluye la reserva actual para que no choque consigo misma al verificar disponibilidad
+        if not await is_resource_available(
+            resource_id=reservation.resource_id, 
+            db=db, 
+            exclude_reservation_id=reservation_id,
+             # Ignorar los errores de tipo ya que start_time y end_time son opcionales datetime y choca con el tipado de Pydantic
+            start_time=start_time, #type: ignore
+            end_time=end_time,  #type: ignore
+        ):
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="El recurso no está disponible en el rango de tiempo especificado"

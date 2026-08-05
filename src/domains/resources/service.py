@@ -1,9 +1,8 @@
-from fastapi import Request, Response, Body, Security, HTTPException, status
-from fastapi.security import SecurityScopes
+from fastapi import Body, Security, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from src.dependencies import get_db, get_current_user
-from typing import Annotated, List
 from src.domains.resources.schemas import ResourceCreate, ResourceUpdate
 from src.domains.resources.models import Resources
 
@@ -16,14 +15,14 @@ async def create_resource(
 
     """
 
-    Crea un nuevo recurso en el sistema.
+    Crea un nuevo recurso en la base de datos.
     Args:
-        response (Response): La respuesta HTTP que se enviará al cliente.
-        current_user (dict): Información del usuario actual obtenida a partir del token de acceso JWT.
-    Returns:
-        dict: Un diccionario que contiene un mensaje de éxito y la información del recurso creado.
+        resource (ResourceCreate): Datos del recurso a crear.
+        db (AsyncSession): Sesión de base de datos asincrónica.
     Raises:
-        HTTPException: Si el usuario no tiene los permisos necesarios para crear un recurso.
+        HTTPException: Si el recurso con el mismo nombre ya existe.
+    Returns:
+        Resources: Objeto del recurso creado.
 
     """
 
@@ -127,7 +126,9 @@ async def remove_resource(
 
     """
 
-    smtm = select(Resources).where(Resources.id == resource_id) # Verificar si el recurso existe antes de eliminarlo
+    smtm = (select(Resources)
+            .options(selectinload(Resources.reservations))
+            .where(Resources.id == resource_id)) # Verificar si el recurso existe antes de eliminarlo
     result = await db.execute(smtm)
     resource = result.scalar_one_or_none()
 
@@ -135,6 +136,13 @@ async def remove_resource(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="El recurso no existe."
+        )
+
+    # Verificar si el recurso tiene reservas asociadas antes de eliminarlo
+    if resource.reservations:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se puede eliminar el recurso porque tiene reservas asociadas."
         )
 
     await db.delete(resource)
@@ -171,6 +179,21 @@ async def update_resource(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="El recurso no existe."
         )
+    
+    # Verificar si el nuevo nombre del recurso ya está en uso por otro recurso
+    if resource_data.name:
+        smtm = select(Resources).where(
+            Resources.name == resource_data.name, 
+            Resources.id != resource_id
+        )  
+        result = await db.execute(smtm)
+        existing_resource = result.scalar_one_or_none()
+
+        if existing_resource:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="El nombre del recurso ya está en uso por otro recurso."
+            )
 
     # Actualizar los campos del recurso con los datos proporcionados
     resource_data_dict = resource_data.model_dump(exclude_unset=True) # Obtener datos que solo han sido proporcionados

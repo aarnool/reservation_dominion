@@ -8,7 +8,9 @@ class ResourceBase(BaseModel):
     description: str | None = Field(
         default=None, description="Descripción opcional del recurso")
     capacity: int = Field(
-        description="Capacidad del recurso")
+        description="Capacidad del recurso",
+        ge=1,  # La capacidad debe ser al menos 1
+        examples=[10])
 
 
 # Esquemas para la creación de un recurso inyectable para usar en los endpoints Body
@@ -38,6 +40,8 @@ class ResourceUpdate(BaseModel):
     description: str | None = Field(
         default=None, description="Descripción opcional del recurso")
     capacity: int | None = Field(
-        default=None, description="Capacidad del recurso")
+        default=None, description="Capacidad del recurso",
+        ge=1,  # La capacidad debe ser al menos 1
+        examples=[10])
     
     

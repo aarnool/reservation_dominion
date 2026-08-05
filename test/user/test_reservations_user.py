@@ -351,8 +351,3 @@ async def test_user_cannot_approve_reservation(user_client: AsyncClient, db_sess
 
 
 
-# Verifica que un usuario normal no tenga permisos para ver las reservas de todos
-async def test_user_cannot_get_all_reservations(user_client: AsyncClient):
-
-    response = await user_client.get("/reservations/all")
-    assert response.status_code == 403

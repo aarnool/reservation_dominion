@@ -38,7 +38,9 @@ async def get_reservations_endpoint(
     
     """
 
-    Obtiene las reservas asociadas al usuario autenticado, permitiendo el filtrado opcional por múltiples campos al mismo tiempo.
+    Obtiene las reservas permitiendo el filtrado opcional. 
+    Si el usuario tiene permisos de administrador, obtiene todas las reservas del sistema.
+    Si es un usuario regular, obtiene solo las suyas.
     ### Detalles:
     - **status**: Estado por el cual se desean filtrar las reservas (opcional).
     - **date**: Fecha exacta por la cual filtrar (opcional).
@@ -49,16 +51,27 @@ async def get_reservations_endpoint(
 
     """
     
-    return await service.get_reservations(
-        user_id=current_user["id"], 
-        db=db, 
-        status_filter=status_filter, 
-        filter_date=filter_date, 
-        resource_ids=resource_ids, 
-        resource_name=resource_name,
-        start=start, 
-        limit=limit
-    )
+    is_admin = "reservations:read_all" in current_user.get("scopes", [])
+
+    if is_admin:
+        # El administrador obtiene todas las reservas
+        return await service.get_all_reservations(
+            db=db,
+            start=start,
+            limit=limit
+        )
+    else:
+        # El usuario normal obtiene solo sus reservas filtradas
+        return await service.get_reservations(
+            user_id=current_user["id"], 
+            db=db, 
+            status_filter=status_filter, 
+            filter_date=filter_date, 
+            resource_ids=resource_ids, 
+            resource_name=resource_name,
+            start=start, 
+            limit=limit
+        )
 
 
 
@@ -157,38 +170,6 @@ async def approve_reservation_endpoint(
         db=db)
 
 
-
-
-@router.get(
-    "/all",
-    tags=["Admin"],
-    response_model=list[ReservationResponse],
-    status_code=status.HTTP_200_OK,
-    summary="Obtiene todas las reservas del sistema (solo para administradores)"
-)
-async def get_all_reservations_endpoint(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[dict, Security(get_current_user, scopes=["reservations:read_all"])],
-    start: Annotated[int, Query(
-        description="Índice de inicio para la paginación")] = 0,
-    limit: Annotated[int, Query(
-        description="Número máximo de reservas a devolver (opcional)")] = 10,
-    
-):
-    
-    """
-
-    Obtiene todas las reservas del sistema, sin importar el usuario que las haya creado. Este endpoint es exclusivo para administradores.
-    ### Detalles:
-    - **current_user**: Usuario autenticado con rol de administrador (obligatorio)
-
-    """
-    
-    return await service.get_all_reservations(
-        db=db,
-        start=start,
-        limit=limit
-    )
 
 
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, AwareDatetime
+from pydantic import BaseModel, ConfigDict, Field, AwareDatetime, model_validator
 from datetime import datetime
 from src.domains.reservations.models import StatusReservation
 
@@ -16,6 +16,13 @@ class ReservationBase(BaseModel):
         description="Fecha y hora de inicio de la reserva")
     end_time: AwareDatetime = Field(
         description="Fecha y hora de finalización de la reserva")
+
+    # Validador a nivel de modelo: la fecha de inicio debe ser estrictamente anterior a la fecha de fin
+    @model_validator(mode="after")
+    def validate_start_before_end(self):
+        if self.start_time >= self.end_time:
+            raise ValueError("La fecha de inicio debe ser anterior a la fecha de fin")
+        return self
     
 
 

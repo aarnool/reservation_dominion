@@ -46,14 +46,14 @@ async def authenticate_user(
         verify_password(password, DUMMY_HASH) # Verifica la contraseña para evitar ataques de temporización
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuario no encontrado",
+            detail="Credenciales inválidas",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     if not verify_password(password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Contraseña incorrecta",
+            detail="Credenciales inválidas",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -130,7 +130,7 @@ async def create_user(
     if existing_user or existing_user_email:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="El nombre de usuario/cooreo ya está en uso"
+            detail="El nombre de usuario/correo ya está en uso"
         )
     password_hash = get_password_hash(user_create.password)
     new_user = User(

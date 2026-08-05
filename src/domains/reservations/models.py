@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, func, ForeignKey, Text
 from sqlalchemy.orm import relationship, mapped_column, Mapped
+from src.core.utils import TZDateTime
 from src.database import Base
 from enum import Enum
 from sqlalchemy.types import Enum as SQLEnum
@@ -21,8 +22,8 @@ class Reservation(Base):
     resource_id: Mapped[int] = mapped_column(Integer, ForeignKey("resources.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(124), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
-    start_time: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)
-    end_time: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=False)
+    start_time: Mapped[DateTime] = mapped_column(TZDateTime, nullable=False)
+    end_time: Mapped[DateTime] = mapped_column(TZDateTime, nullable=False)
     status_reservation: Mapped[StatusReservation] = mapped_column(SQLEnum(StatusReservation), nullable=False, default=StatusReservation.PENDING)
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())

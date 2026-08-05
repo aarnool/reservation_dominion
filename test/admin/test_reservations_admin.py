@@ -27,7 +27,7 @@ async def test_get_all_reservations_success(admin_client: AsyncClient, db_sessio
     db_session.add(reservation)
     await db_session.commit()
     
-    response = await admin_client.get("/reservations/all")
+    response = await admin_client.get("/reservations/")
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
@@ -57,7 +57,7 @@ async def test_get_all_reservations_pagination(admin_client: AsyncClient, db_ses
         db_session.add(reservation)
     await db_session.commit()
     
-    res1 = await admin_client.get("/reservations/all?start=10&limit=10")
+    res1 = await admin_client.get("/reservations/?start=10&limit=10")
     assert res1.status_code == 200
     assert len(res1.json()) == 5
     

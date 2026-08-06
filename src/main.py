@@ -3,12 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.domains.resources.router import router as resources_router
 from src.domains.auth.router import router as auth_router
 from src.domains.reservations.router import router as reservations_router
-
+from src.domains.users.router import router as users_router
 
 app = FastAPI   ()
 app.include_router(resources_router)
 app.include_router(auth_router)
 app.include_router(reservations_router)
+app.include_router(users_router)
 
 origins = [
     "http://localhost",

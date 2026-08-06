@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Depends, HTTPException, status, Security, Query, Path
+from fastapi import APIRouter, Body, Depends, HTTPException, status, Security, Query, Path, Response
 from src.domains.reservations.schemas import ReservationResponse, ReservationCreate, StatusReservation, ReservationUpdate
 from src.dependencies import get_db, get_current_user
 from typing import Annotated, List
@@ -20,6 +20,7 @@ router = APIRouter(
     summary="Obtiene reservas con múltiples filtros opcionales (fecha, estado, recurso)"
 )
 async def get_reservations_endpoint(
+    response: Response,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[dict, Security(get_current_user, scopes=["reservations:read"])],
     status_filter: Annotated[StatusReservation | None, Query(
@@ -53,25 +54,20 @@ async def get_reservations_endpoint(
     
     is_admin = "reservations:read_all" in current_user.get("scopes", [])
 
-    if is_admin:
-        # El administrador obtiene todas las reservas
-        return await service.get_all_reservations(
-            db=db,
-            start=start,
-            limit=limit
-        )
-    else:
-        # El usuario normal obtiene solo sus reservas filtradas
-        return await service.get_reservations(
-            user_id=current_user["id"], 
-            db=db, 
-            status_filter=status_filter, 
-            filter_date=filter_date, 
-            resource_ids=resource_ids, 
-            resource_name=resource_name,
-            start=start, 
-            limit=limit
-        )
+    # Llamamos al mismo servicio unificado para ambos casos
+    reservations, total = await service.get_reservations(
+        db=db,
+        user_id=None if is_admin else current_user["id"],
+        status_filter=status_filter, 
+        filter_date=filter_date, 
+        resource_ids=resource_ids, 
+        resource_name=resource_name,
+        start=start, 
+        limit=limit
+    )
+        
+    response.headers["X-Total-Count"] = str(total)
+    return reservations
 
 
 

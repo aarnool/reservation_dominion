@@ -1,55 +1,31 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from src.domains.reservations.models import Reservation
 from src.domains.resources.models import Resources
 from src.domains.reservations.schemas import ReservationCreate, StatusReservation, ReservationUpdate
-from typing import Sequence, List
+from typing import Sequence, List, Tuple
 from datetime import date, datetime, time, timezone
-
-# Servicio para obtener todas las reservas de todos los usuarios, con paginacion
-async def get_all_reservations(
-    db: AsyncSession,
-    start: int = 0,
-    limit: int = 10
-) -> Sequence[Reservation]:
-    """
-    Obtiene todas las reservas de todos los usuarios desde la base de datos, incluyendo paginación.
-    Args:
-        db (AsyncSession): Sesión de base de datos asincrónica.
-        start (int): Índice inicial para la paginación (por defecto es 0).
-        limit (int): Número máximo de reservas a devolver (por defecto es 10).
-    Returns:
-        Sequence[Reservation]: Una lista de objetos Reservation que representan las reservas obtenidas.
-
-    """
-
-    query = select(Reservation).offset(start).limit(limit)
-    
-    result = await db.execute(query)
-    reservations = result.scalars().all()
-
-    return reservations
-    
 
 
 # Servicio para obtener una lista de reservas desde la base de datos con filtros opcionales y paginación
 async def get_reservations(
-    user_id: int,
     db: AsyncSession,
+    user_id: int | None = None,
     status_filter: StatusReservation | None = None,
     filter_date: date | None = None,
     resource_ids: List[int] | None = None,
     resource_name: str | None = None,
     start: int = 0,
     limit: int = 10
-) -> Sequence[Reservation]:
+) -> Tuple[Sequence[Reservation], int]:
     """
 
-    Obtiene una lista de reservas desde la base de datos, con la posibilidad de filtrar por estado, fecha y recurso, incluyendo paginación para un usuario específico.
+    Obtiene una lista de reservas desde la base de datos, con la posibilidad de filtrar por estado, fecha y recurso, incluyendo paginación.
+    Si se proporciona un user_id, filtra por ese usuario. Si es None, obtiene las reservas de todos (Modo Admin).
     Args:
-        user_id (int): ID del usuario autenticado.
         db (AsyncSession): Sesión de base de datos asincrónica.
+        user_id (int | None): ID del usuario para filtrar, o None para todos los usuarios.
         status_filter (StatusReservation | None): Filtro opcional por estado de la reserva.
         filter_date (date | None): Filtro opcional por fecha exacta de la reserva.
         resource_ids (List[int] | None): Filtro opcional por múltiples identificadores de recurso.
@@ -57,17 +33,22 @@ async def get_reservations(
         start (int): Índice inicial para la paginación (por defecto es 0).
         limit (int): Número máximo de reservas a devolver (por defecto es 10).
     Returns:
-        Sequence[Reservation]: Una lista de objetos Reservation que representan las reservas obtenidas.
+        Tuple[Sequence[Reservation], int]: Una tupla con la lista de objetos Reservation y el total.
 
     """
 
-    query = select(Reservation).where(Reservation.user_id == user_id)
+    query = select(Reservation)
+    count_query = select(func.count()).select_from(Reservation)
+
+    if user_id is not None:
+        query = query.where(Reservation.user_id == user_id)
+        count_query = count_query.where(Reservation.user_id == user_id)
 
     if status_filter is not None:
         query = query.where(Reservation.status_reservation == status_filter)
+        count_query = count_query.where(Reservation.status_reservation == status_filter)
     
     if filter_date is not None:
-      
         # Convertimos la fecha a un rango de tiempo para filtrar las reservas que ocurren en ese día específico
         start_of_day = datetime.combine(filter_date, time.min).replace(tzinfo=timezone.utc)
         end_of_day = datetime.combine(filter_date, time.max).replace(tzinfo=timezone.utc)
@@ -76,19 +57,29 @@ async def get_reservations(
             Reservation.start_time >= start_of_day,
             Reservation.start_time <= end_of_day
         )
+        count_query = count_query.where(
+            Reservation.start_time >= start_of_day,
+            Reservation.start_time <= end_of_day
+        )
     
     if resource_ids is not None:
         query = query.where(Reservation.resource_id.in_(resource_ids))
+        count_query = count_query.where(Reservation.resource_id.in_(resource_ids))
 
     if resource_name is not None:
         query = query.join(Resources).where(Resources.name.ilike(f"%{resource_name}%"))
+        count_query = count_query.join(Resources).where(Resources.name.ilike(f"%{resource_name}%"))
 
+    # Ejecutar conteo total
+    total_result = await db.execute(count_query)
+    total = total_result.scalar_one()
+
+    # Ejecutar búsqueda paginada
     query = query.offset(start).limit(limit)
-    
     result = await db.execute(query)
     reservations = result.scalars().all()
 
-    return reservations
+    return reservations, total
 
 
 # Verificar si la fecha del recurso está disponible para la reserva, considerando las reservas existentes y el estado de las mismas

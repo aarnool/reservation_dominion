@@ -17,7 +17,7 @@ router = APIRouter(
     "/",
     response_model=list[ReservationResponse],
     status_code=status.HTTP_200_OK,
-    summary="Obtiene reservas con múltiples filtros opcionales (fecha, estado, recurso)"
+    summary="Obtiene reservas con múltiples filtros opcionales: fecha, estado, recurso (TODOS LOS USUARIOS CON PERMISOS 👥)"
 )
 async def get_reservations_endpoint(
     response: Response,
@@ -39,6 +39,7 @@ async def get_reservations_endpoint(
     
     """
 
+    ### **REQUIERE PERMISOS QUE POSEEN TODOS LOS USUARIOS 👥🔓**
     Obtiene las reservas permitiendo el filtrado opcional. 
     Si el usuario tiene permisos de administrador, obtiene todas las reservas del sistema.
     Si es un usuario regular, obtiene solo las suyas.
@@ -74,10 +75,9 @@ async def get_reservations_endpoint(
 # Endpoint para crear una nueva reserva
 @router.post(
     "/",
-    tags=["Admin"],
     response_model=ReservationResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Crea una nueva reserva"
+    summary="Crea una nueva reserva (TODOS LOS USUARIOS CON PERMISOS 👥)"
 )
 async def create_reservation_endpoint(
     reservation: Annotated[ReservationCreate, Body(description="Datos de la reserva a crear")],
@@ -87,6 +87,7 @@ async def create_reservation_endpoint(
     
     """
 
+    ### **REQUIERE PERMISOS QUE POSEEN TODOS LOS USUARIOS 👥🔓**
     Crea una nueva reserva en el sistema.
     ### Detalles:
     - **resource_id**: ID del recurso a reservar (obligatorio)
@@ -107,10 +108,9 @@ async def create_reservation_endpoint(
 # Endpoint para actualizar una reserva existente (solo ciertos campos)
 @router.patch(
     "/{reservation_id}",
-    tags=["Admin"],
     response_model=ReservationResponse,
     status_code=status.HTTP_200_OK,
-    summary="Actualiza una reserva existente (solo ciertos campos)"
+    summary="Actualiza una reserva existente (TODOS LOS USUARIOS CON PERMISOS 👥)"
 )
 async def update_reservation_endpoint(
     reservation_id: Annotated[int, Path(description="ID de la reserva a actualizar")],
@@ -121,6 +121,7 @@ async def update_reservation_endpoint(
     
     """
 
+    ### **REQUIERE PERMISOS QUE POSEEN TODOS LOS USUARIOS 👥🔓**
     Actualiza una reserva existente en el sistema, permitiendo modificar solo ciertos campos.
     ### Detalles:
     - **reservation_id**: ID de la reserva a actualizar (obligatorio)
@@ -142,10 +143,9 @@ async def update_reservation_endpoint(
 # Endpoint para actualizar el estado de una reserva existente a aprobada
 @router.patch(
     "/{reservation_id}/approve",
-    tags=["Admin"],
     response_model=ReservationResponse,
     status_code=status.HTTP_200_OK,
-    summary="Aprobar una reserva ya existente"
+    summary="Aprobar una reserva ya existente (SOLO ADMINISTRADOR 🚫)"
 )
 async def approve_reservation_endpoint(
     reservation_id: Annotated[int, Path(description="ID de la reserva a actualizar")],
@@ -155,6 +155,7 @@ async def approve_reservation_endpoint(
     
     """
 
+    ### **REQUIERE PERMISOS QUE SOLO POSEEN LOS ADMINISTRADORES 🚫🔒**
     Actualiza una reserva existente en el sistema, cambiándola a aprobada.
     ### Detalles:
     - **reservation_id**: ID de la reserva a actualizar (obligatorio)
@@ -172,10 +173,9 @@ async def approve_reservation_endpoint(
 # Endpoint para cancelar una reserva existente
 @router.patch(
     "/{reservation_id}/cancel",
-    tags=["Admin"],
     response_model=ReservationResponse,
     status_code=status.HTTP_200_OK,
-    summary="Cancela una reserva existente"
+    summary="Cancela una reserva existente (TODOS LOS USUARIOS CON PERMISOS 👥)"
 )
 async def cancel_reservation_endpoint(
     reservation_id: Annotated[int, Path(description="ID de la reserva a cancelar")],
@@ -185,6 +185,7 @@ async def cancel_reservation_endpoint(
     
     """
 
+    ### **REQUIERE PERMISOS QUE POSEEN TODOS LOS USUARIOS 👥🔓**
     Cancela una reserva existente en el sistema.
     ### Detalles:
     - **reservation_id**: ID de la reserva a cancelar (obligatorio)

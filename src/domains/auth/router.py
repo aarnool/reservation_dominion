@@ -22,6 +22,7 @@ async def login(
     db: AsyncSession = Depends(get_db)
 ):
     """
+    
     ### **NO HAY QUE TENER QUE AUTENTICARSE/PERMISOS PARA ACCEDER A ESTE ENDPOINT 🌐✅**
     Inicia sesión en el sistema autenticando al usuario y generando un token de acceso.
     ### Detalles:
@@ -47,6 +48,7 @@ async def register(
     db: AsyncSession = Depends(get_db)
 ):
     """
+
     ### **NO HAY QUE TENER QUE AUTENTICARSE/PERMISOS PARA ACCEDER A ESTE ENDPOINT 🌐✅**
     Registra un nuevo usuario en el sistema.
     ### Detalles:
@@ -68,6 +70,7 @@ async def register(
 )
 async def logout(response: Response):
     """
+
     ### **NO HAY QUE TENER QUE AUTENTICARSE/PERMISOS PARA ACCEDER A ESTE ENDPOINT 🌐✅**
     Cierra sesión en el sistema eliminando el token de acceso del usuario.
     ### Detalles:

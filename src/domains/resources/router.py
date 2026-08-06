@@ -27,6 +27,7 @@ async def create_resource_endpoint(
 ):
     
     """
+    
     ### **REQUIERE PERMISOS QUE SOLO POSEEN LOS ADMINISTRADORES 🚫🔒**
     Crea un nuevo recurso en el sistema que se conectara con las reservas.
     ### Detalles:
@@ -58,6 +59,7 @@ async def get_resources_endpoint(
 ):
     
     """
+
     ### **REQUIERE PERMISOS QUE POSEEN TODOS LOS USUARIOS 👥🔓**
     Obtiene una lista de recursos desde la base de datos con paginación.
     ### Detalles:
@@ -84,10 +86,12 @@ async def get_resource_by_id_endpoint(
     current_user: Annotated[dict, Security(get_current_user, scopes=["resources:read"])]
 ):
     """
+
     ### **REQUIERE PERMISOS QUE POSEEN TODOS LOS USUARIOS 👥🔓**
     Obtiene un recurso específico por su ID desde la base de datos.
     ### Detalles:
     - **resource_id**: ID del recurso a obtener (obligatorio)
+
     """
     
     return await get_resource_by_id(resource_id=resource_id, db=db)
@@ -106,11 +110,13 @@ async def update_resource_endpoint(
     current_user: Annotated[dict, Security(get_current_user, scopes=["resources:update"])]
 ):
     """
+
     ### **REQUIERE PERMISOS QUE SOLO POSEEN LOS ADMINISTRADORES 🚫🔒**
     Actualiza un recurso existente en la base de datos.
     ### Detalles:
     - **resource_id**: ID del recurso a actualizar (obligatorio)
     - **resource_data**: Datos actualizados del recurso (obligatorio)
+
     """
     
     return await update_resource(resource_id=resource_id, resource_data=resource_data, db=db)
@@ -128,10 +134,12 @@ async def delete_resource_endpoint(
     current_user: Annotated[dict, Security(get_current_user, scopes=["resources:delete"])]
 ):
     """
+
     ### **REQUIERE PERMISOS QUE SOLO POSEEN LOS ADMINISTRADORES 🚫🔒**
     Elimina un recurso existente de la base de datos.
     ### Detalles:
     - **resource_id**: ID del recurso a eliminar (obligatorio)
+
     """
     
     await remove_resource(resource_id=resource_id, db=db)

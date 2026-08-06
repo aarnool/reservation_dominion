@@ -16,7 +16,7 @@ router = APIRouter(
     "/",
     response_model=list[UserResponse],
     status_code=status.HTTP_200_OK,
-    summary="Obtiene todos los usuarios del sistema"
+    summary="Obtiene todos los usuarios del sistema (SOLO ADMINISTRADOR 🚫)"
 )
 async def get_all_users(
     response: Response,
@@ -29,6 +29,7 @@ async def get_all_users(
 ):
     """
 
+    ### **REQUIERE PERMISOS QUE SOLO POSEEN LOS ADMINISTRADORES 🚫🔒**
     Obtiene todos los usuarios registrados en el sistema.
     ### Detalles:
     - **start**: Índice de inicio para la paginación (opcional, por defecto 0).
@@ -49,7 +50,7 @@ async def get_all_users(
     "/{user_id}",
     response_model=UserResponse,
     status_code=status.HTTP_200_OK,
-    summary="Obtiene un usuario por su ID"
+    summary="Obtiene un usuario por su ID (SOLO ADMINISTRADOR 🚫)" 
 )
 async def get_user_by_id(
     user_id: int,
@@ -57,6 +58,8 @@ async def get_user_by_id(
     current_user: Annotated[dict, Security(get_current_user, scopes=["users:read"])]
 ):
     """
+
+    ### **REQUIERE PERMISOS QUE SOLO POSEEN LOS ADMINISTRADORES 🚫🔒**
     Obtiene un usuario por su ID.
     ### Detalles:
     - **user_id**: ID del usuario a buscar.

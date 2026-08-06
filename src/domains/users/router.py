@@ -43,3 +43,27 @@ async def get_all_users(
 
     response.headers["X-Total-Count"] = str(total)
     return users
+
+
+@router.get(
+    "/{user_id}",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Obtiene un usuario por su ID"
+)
+async def get_user_by_id(
+    user_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[dict, Security(get_current_user, scopes=["users:read"])]
+):
+    """
+    Obtiene un usuario por su ID.
+    ### Detalles:
+    - **user_id**: ID del usuario a buscar.
+    
+    """
+    return await service.get_user_by_id(
+        db=db,
+        user_id=user_id
+    )
+        

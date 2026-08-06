@@ -14,7 +14,7 @@ router = APIRouter(
 @router.post(
     "/login",
     status_code=status.HTTP_200_OK,
-    summary="Inicia sesión en el sistema"
+    summary="Inicia sesión en el sistema autenticando al usuario y generando un token de acceso (PUBLICO 🌐)"
 )
 async def login(
     response: Response,
@@ -22,7 +22,7 @@ async def login(
     db: AsyncSession = Depends(get_db)
 ):
     """
-
+    ### **NO HAY QUE TENER QUE AUTENTICARSE/PERMISOS PARA ACCEDER A ESTE ENDPOINT 🌐✅**
     Inicia sesión en el sistema autenticando al usuario y generando un token de acceso.
     ### Detalles:
     - **username**: Nombre de usuario del usuario que intenta iniciar sesión.
@@ -39,7 +39,7 @@ async def login(
     "/register",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Registra un nuevo usuario en el sistema"
+    summary="Registra un nuevo usuario en el sistema (PUBLICO 🌐)"
 )
 async def register(
     response: Response,
@@ -47,7 +47,7 @@ async def register(
     db: AsyncSession = Depends(get_db)
 ):
     """
-
+    ### **NO HAY QUE TENER QUE AUTENTICARSE/PERMISOS PARA ACCEDER A ESTE ENDPOINT 🌐✅**
     Registra un nuevo usuario en el sistema.
     ### Detalles:
     - **username**: Nombre de usuario único para el sistema.
@@ -64,11 +64,11 @@ async def register(
 @router.post(
     "/logout",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Cierra sesión en el sistema"
+    summary="Cierra sesión en el sistema eliminando el token de acceso del usuario (PUBLICO 🌐)"
 )
 async def logout(response: Response):
     """
-
+    ### **NO HAY QUE TENER QUE AUTENTICARSE/PERMISOS PARA ACCEDER A ESTE ENDPOINT 🌐✅**
     Cierra sesión en el sistema eliminando el token de acceso del usuario.
     ### Detalles:
     - Elimina la cookie de autenticación del usuario.

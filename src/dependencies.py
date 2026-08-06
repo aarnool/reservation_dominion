@@ -1,24 +1,22 @@
-from src.database import SessionLocal
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
+import jwt
 from fastapi import HTTPException, Request, status
 from fastapi.security import SecurityScopes
-import jwt
-from src.core.security import SECRET_KEY, ALGORITHM
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.security import ALGORITHM, SECRET_KEY
+from src.database import SessionLocal
 
 
 # Dependencia para obtener la sesión de base de datos de manera segura y asincrónica se cierra despues de usarla
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
+async def get_db() -> AsyncGenerator[AsyncSession]:
     async with SessionLocal() as session:
         yield session
 
 
 # Dependencia para obtener el usuario actual a partir del token de acceso JWT y verificar los scopes de seguridad
-async def get_current_user(
-    request: Request, 
-    security_scopes: SecurityScopes
-) -> dict:
-    
+async def get_current_user(request: Request, security_scopes: SecurityScopes) -> dict:
     """
 
     Obtiene el usuario actual a partir del token de acceso JWT y verifica los scopes de seguridad
@@ -43,7 +41,6 @@ async def get_current_user(
         headers={"WWW-Authenticate": authenticate_value},
     )
 
-
     try:
         token = request.cookies.get("auth_token")
         if not token:
@@ -53,7 +50,7 @@ async def get_current_user(
 
     except jwt.ExpiredSignatureError:
         raise credentials_exception
-    
+
     except jwt.InvalidTokenError:
         raise credentials_exception
 

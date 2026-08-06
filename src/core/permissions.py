@@ -1,30 +1,29 @@
 ROLES_SCOOPES = {
     "admin": [
-        # Permisos de Recursos 
-        "resources:create", 
-        "resources:read", 
-        "resources:update", 
-        "resources:delete", 
+        # Permisos de Recursos
+        "resources:create",
+        "resources:read",
+        "resources:update",
+        "resources:delete",
         # Permisos de Reservaciones
-        "reservations:create", 
-        "reservations:read", 
-        "reservations:update", 
+        "reservations:create",
+        "reservations:read",
+        "reservations:update",
         "reservations:delete",
         "reservations:approve",
         "reservations:read_all",
         "reservations:cancel",
         # Permisos de Usuarios
-        "users:read"
+        "users:read",
     ],
-    
     "user": [
         # Permisos de Recursos
-        "resources:read", 
+        "resources:read",
         # Permisos de Reservaciones
-        "reservations:create", 
-        "reservations:read", 
-        "reservations:update", 
+        "reservations:create",
+        "reservations:read",
+        "reservations:update",
         "reservations:delete",
-        "reservations:cancel"
-    ]
+        "reservations:cancel",
+    ],
 }

@@ -1,11 +1,17 @@
+from collections.abc import Sequence
+from datetime import UTC, date, datetime, time
+
 from fastapi import HTTPException, status
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+
 from src.domains.reservations.models import Reservation
+from src.domains.reservations.schemas import (
+    ReservationCreate,
+    ReservationUpdate,
+    StatusReservation,
+)
 from src.domains.resources.models import Resources
-from src.domains.reservations.schemas import ReservationCreate, StatusReservation, ReservationUpdate
-from typing import Sequence, List, Tuple
-from datetime import date, datetime, time, timezone
 
 
 # Servicio para obtener una lista de reservas desde la base de datos con filtros opcionales y paginación
@@ -14,11 +20,11 @@ async def get_reservations(
     user_id: int | None = None,
     status_filter: StatusReservation | None = None,
     filter_date: date | None = None,
-    resource_ids: List[int] | None = None,
+    resource_ids: list[int] | None = None,
     resource_name: str | None = None,
     start: int = 0,
-    limit: int = 10
-) -> Tuple[Sequence[Reservation], int]:
+    limit: int = 10,
+) -> tuple[Sequence[Reservation], int]:
     """
 
     Obtiene una lista de reservas desde la base de datos, con la posibilidad de filtrar por estado, fecha y recurso, incluyendo paginación.
@@ -47,28 +53,28 @@ async def get_reservations(
     if status_filter is not None:
         query = query.where(Reservation.status_reservation == status_filter)
         count_query = count_query.where(Reservation.status_reservation == status_filter)
-    
+
     if filter_date is not None:
         # Convertimos la fecha a un rango de tiempo para filtrar las reservas que ocurren en ese día específico
-        start_of_day = datetime.combine(filter_date, time.min).replace(tzinfo=timezone.utc)
-        end_of_day = datetime.combine(filter_date, time.max).replace(tzinfo=timezone.utc)
-        
+        start_of_day = datetime.combine(filter_date, time.min).replace(tzinfo=UTC)
+        end_of_day = datetime.combine(filter_date, time.max).replace(tzinfo=UTC)
+
         query = query.where(
-            Reservation.start_time >= start_of_day,
-            Reservation.start_time <= end_of_day
+            Reservation.start_time >= start_of_day, Reservation.start_time <= end_of_day
         )
         count_query = count_query.where(
-            Reservation.start_time >= start_of_day,
-            Reservation.start_time <= end_of_day
+            Reservation.start_time >= start_of_day, Reservation.start_time <= end_of_day
         )
-    
+
     if resource_ids is not None:
         query = query.where(Reservation.resource_id.in_(resource_ids))
         count_query = count_query.where(Reservation.resource_id.in_(resource_ids))
 
     if resource_name is not None:
         query = query.join(Resources).where(Resources.name.ilike(f"%{resource_name}%"))
-        count_query = count_query.join(Resources).where(Resources.name.ilike(f"%{resource_name}%"))
+        count_query = count_query.join(Resources).where(
+            Resources.name.ilike(f"%{resource_name}%")
+        )
 
     # Ejecutar conteo total
     total_result = await db.execute(count_query)
@@ -88,7 +94,8 @@ async def is_resource_available(
     start_time: datetime,
     end_time: datetime,
     db: AsyncSession,
-    exclude_reservation_id: int | None = None  # ID de la reserva a excluir (útil al actualizar para no chocar consigo misma)
+    exclude_reservation_id: int
+    | None = None,  # ID de la reserva a excluir (útil al actualizar para no chocar consigo misma)
 ) -> bool:
     """
 
@@ -106,7 +113,9 @@ async def is_resource_available(
 
     smtm = select(Reservation).where(
         Reservation.resource_id == resource_id,
-        Reservation.status_reservation.not_in([StatusReservation.CANCELLED, StatusReservation.COMPLETED]),
+        Reservation.status_reservation.not_in(
+            [StatusReservation.CANCELLED, StatusReservation.COMPLETED]
+        ),
         Reservation.end_time > start_time,
         Reservation.start_time < end_time,
     )
@@ -123,9 +132,7 @@ async def is_resource_available(
 
 # Servicio para crear una reserva en la base de datos
 async def create_reservation(
-    user_id: int,
-    reservation: ReservationCreate,
-    db: AsyncSession
+    user_id: int, reservation: ReservationCreate, db: AsyncSession
 ) -> Reservation:
     """
 
@@ -143,14 +150,16 @@ async def create_reservation(
     if reservation.start_time >= reservation.end_time:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="La fecha de inicio debe ser anterior a la fecha de fin"
+            detail="La fecha de inicio debe ser anterior a la fecha de fin",
         )
 
     # Verificar si el recurso está disponible en el rango de tiempo especificado
-    if not await is_resource_available(reservation.resource_id, reservation.start_time, reservation.end_time, db):
+    if not await is_resource_available(
+        reservation.resource_id, reservation.start_time, reservation.end_time, db
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="El recurso no está disponible en el rango de tiempo especificado"
+            detail="El recurso no está disponible en el rango de tiempo especificado",
         )
 
     # Verificar si el recurso existe en la base de datos
@@ -158,7 +167,7 @@ async def create_reservation(
     if not resource:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="El recurso especificado no existe"
+            detail="El recurso especificado no existe",
         )
 
     new_reservation = Reservation(
@@ -176,12 +185,13 @@ async def create_reservation(
 
     return new_reservation
 
+
 # Servicio para actualizar una reserva existente en la base de datos
 async def update_reservation(
     reservation_id: int,
     reservation_update: ReservationUpdate,
     db: AsyncSession,
-    user_id: int
+    user_id: int,
 ) -> Reservation:
     """
 
@@ -197,18 +207,16 @@ async def update_reservation(
 
     """
 
-    
     smtm = select(Reservation).where(
-        Reservation.id == reservation_id,
-        Reservation.user_id == user_id) # Verificar si la reserva existe en la base de datos
+        Reservation.id == reservation_id, Reservation.user_id == user_id
+    )  # Verificar si la reserva existe en la base de datos
     result = await db.execute(smtm)
     reservation = result.scalar_one_or_none()
 
     # Si la reserva no existe, lanzar una excepción HTTP 404
     if not reservation:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Reserva no encontrada"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Reserva no encontrada"
         )
 
     # Si se proporciona un nuevo resource_id, verificar si el recurso existe
@@ -217,7 +225,7 @@ async def update_reservation(
         if not resource:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="El recurso especificado no existe"
+                detail="El recurso especificado no existe",
             )
 
     # Si se proporciona un nuevo start_time o end_time, verificar si el recurso está disponible en el rango de tiempo especificado
@@ -225,26 +233,27 @@ async def update_reservation(
     end_time = reservation_update.end_time or reservation.end_time
 
     # Validar que la fecha de inicio sea anterior a la fecha de fin
-    if start_time >= end_time: # type: ignore
+    if start_time >= end_time:  # type: ignore
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="La fecha de inicio debe ser anterior a la fecha de fin"
+            detail="La fecha de inicio debe ser anterior a la fecha de fin",
         )
 
-    if reservation_update.start_time is not None or reservation_update.end_time is not None:
-        if not await is_resource_available(
-            resource_id=reservation.resource_id, 
-            db=db, 
-            exclude_reservation_id=reservation_id,
-             # Ignorar los errores de tipo ya que start_time y end_time son opcionales datetime y choca con el tipado de Pydantic
-            start_time=start_time, #type: ignore
-            end_time=end_time,  #type: ignore
-        ):
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="El recurso no está disponible en el rango de tiempo especificado"
-                )
-    
+    if (
+        reservation_update.start_time is not None
+        or reservation_update.end_time is not None
+    ) and not await is_resource_available(
+        resource_id=reservation_update.resource_id or reservation.resource_id,
+        start_time=start_time,  # type: ignore
+        end_time=end_time,  # type: ignore
+        db=db,
+        exclude_reservation_id=reservation_id,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El recurso no está disponible en el rango de tiempo especificado",
+        )
+
     # Actualizar los campos proporcionados en la solicitud
     reservation_update_data = reservation_update.model_dump(exclude_unset=True)
     for key, value in reservation_update_data.items():
@@ -254,15 +263,10 @@ async def update_reservation(
     await db.refresh(reservation)
 
     return reservation
-    
-
 
 
 # Servicio para actualizar el estado de una reserva existente a confirmada
-async def approve_reservation(
-    reservation_id: int,
-    db: AsyncSession
-) -> Reservation:
+async def approve_reservation(reservation_id: int, db: AsyncSession) -> Reservation:
     """
 
     Actualiza una reserva existente en la base de datos, cambiando su estado a confirmado.
@@ -276,24 +280,26 @@ async def approve_reservation(
 
     """
 
-    smtm = select(Reservation).where(Reservation.id == reservation_id) # Verificar si la reserva existe en la base de datos
+    smtm = select(Reservation).where(
+        Reservation.id == reservation_id
+    )  # Verificar si la reserva existe en la base de datos
     result = await db.execute(smtm)
     reservation = result.scalar_one_or_none()
 
-   
-
     if not reservation:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Reserva no encontrada"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Reserva no encontrada"
         )
 
-    if reservation.status_reservation == StatusReservation.CONFIRMED or reservation.status_reservation == StatusReservation.CANCELLED:
+    if (
+        reservation.status_reservation == StatusReservation.CONFIRMED
+        or reservation.status_reservation == StatusReservation.CANCELLED
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="La reserva ya ha sido confirmada o cancelada"
+            detail="La reserva ya ha sido confirmada o cancelada",
         )
-    
+
     # Actualizar el estado de la reserva a "confirmada"
     reservation.status_reservation = StatusReservation.CONFIRMED
 
@@ -303,11 +309,8 @@ async def approve_reservation(
     return reservation
 
 
-
 async def cancel_own_reservation(
-    reservation_id: int,
-    user_id: int,
-    db: AsyncSession
+    reservation_id: int, user_id: int, db: AsyncSession
 ) -> Reservation:
     """
     Cancela una reserva existente realizada por el usuario autenticado.
@@ -322,23 +325,24 @@ async def cancel_own_reservation(
 
     """
 
-    smtm = select(Reservation).where(Reservation.id == reservation_id, Reservation.user_id == user_id)
+    smtm = select(Reservation).where(
+        Reservation.id == reservation_id, Reservation.user_id == user_id
+    )
     result = await db.execute(smtm)
     reservation = result.scalar_one_or_none()
 
     if not reservation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Reserva no encontrada o no pertenece al usuario autenticado"
+            detail="Reserva no encontrada o no pertenece al usuario autenticado",
         )
-
 
     if reservation.status_reservation == StatusReservation.CANCELLED:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="La reserva ya ha sido cancelada"
+            detail="La reserva ya ha sido cancelada",
         )
-    
+
     # Actualizar el estado de la reserva a "cancelada"
     reservation.status_reservation = StatusReservation.CANCELLED
 

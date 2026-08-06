@@ -1,26 +1,24 @@
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
-from src.models import *
-from src.database import Base
-from httpx import AsyncClient, ASGITransport
-import pytest_asyncio
-from src.core.security import create_access_token
-from src.core.permissions import ROLES_SCOOPES
 
+from src.core.permissions import ROLES_SCOOPES
+from src.core.security import create_access_token
+from src.database import Base
+from src.dependencies import get_db
+from src.main import app
+from src.models import *  # noqa: F401, RUF100
 
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 engine_test = create_async_engine(
-    DATABASE_URL, 
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool
+    DATABASE_URL, connect_args={"check_same_thread": False}, poolclass=StaticPool
 )
 
 TestingSessionLocal = async_sessionmaker(
-    bind=engine_test,
-    autocommit=False, 
-    expire_on_commit=False)
-
+    bind=engine_test, autocommit=False, expire_on_commit=False
+)
 
 
 @pytest_asyncio.fixture()
@@ -28,7 +26,6 @@ async def reset_rate_limiter():
     """
     Fixture para reiniciar el limitador de velocidad antes de cada prueba.
     """
-    pass
 
 
 # Fixture para proporcionar una sesión de base de datos para las pruebas, Se ciera y limpia la base de datos después de cada prueba
@@ -43,6 +40,7 @@ async def db_session():
 
     # 1.1 Insertar roles por defecto
     from src.domains.auth.models import Role
+
     async with TestingSessionLocal() as session:
         session.add(Role(id=1, name="user", description="Usuario regular"))
         session.add(Role(id=2, name="admin", description="Administrador del sistema"))
@@ -63,8 +61,6 @@ async def client(db_session: AsyncSession):
     """
     Fixture para proporcionar un cliente de prueba de FastAPI con la sesión de base de datos inyectada.
     """
-    from src.main import app
-    from src.dependencies import get_db
 
     # Inyectar la sesión de base de datos en la aplicación FastAPI
     async def override_get_db():
@@ -75,7 +71,6 @@ async def client(db_session: AsyncSession):
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="https://test"
     ) as test_client:
-
         yield test_client
 
     app.dependency_overrides.clear()
@@ -85,26 +80,29 @@ async def client(db_session: AsyncSession):
 @pytest_asyncio.fixture()
 async def admin_client(client: AsyncClient):
     """Fixture que proporciona un cliente con sesión de Administrador."""
-    token = create_access_token(data={
-        "sub": "admin_test",
-        "id": 1,
-        "role": "admin",
-        "scopes": ROLES_SCOOPES["admin"]
-    })
+    token = create_access_token(
+        data={
+            "sub": "admin_test",
+            "id": 1,
+            "role": "admin",
+            "scopes": ROLES_SCOOPES["admin"],
+        }
+    )
     client.cookies.set("auth_token", token)
     return client
-
 
 
 # Fixture para un cliente con sesión ya abierta y con un token de Usuario normal
 @pytest_asyncio.fixture()
 async def user_client(client: AsyncClient):
     """Fixture que proporciona un cliente con sesión de Usuario normal."""
-    token = create_access_token(data={
-        "sub": "user_test",
-        "id": 2,
-        "role": "user",
-        "scopes": ROLES_SCOOPES["user"]
-    })
+    token = create_access_token(
+        data={
+            "sub": "user_test",
+            "id": 2,
+            "role": "user",
+            "scopes": ROLES_SCOOPES["user"],
+        }
+    )
     client.cookies.set("auth_token", token)
     return client

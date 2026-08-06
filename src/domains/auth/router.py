@@ -1,28 +1,26 @@
-from fastapi import APIRouter, Depends, Response, status, Body
+from fastapi import APIRouter, Body, Depends, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.dependencies import get_db
-from src.domains.auth.service import login_user, create_user
 from src.domains.auth.schemas import UserCreate, UserResponse
+from src.domains.auth.service import create_user, login_user
 
+router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
-router = APIRouter(
-    prefix="/auth",
-    tags=["Autenticación"]
-)
 
 @router.post(
     "/login",
     status_code=status.HTTP_200_OK,
-    summary="Inicia sesión en el sistema autenticando al usuario y generando un token de acceso (PUBLICO 🌐)"
+    summary="Inicia sesión en el sistema autenticando al usuario y generando un token de acceso (PUBLICO 🌐)",
 )
 async def login(
     response: Response,
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
 ):
     """
-    
+
     ### **NO HAY QUE TENER QUE AUTENTICARSE/PERMISOS PARA ACCEDER A ESTE ENDPOINT 🌐✅**
     Inicia sesión en el sistema autenticando al usuario y generando un token de acceso.
     ### Detalles:
@@ -31,21 +29,19 @@ async def login(
 
     """
     await login_user(response, db, form_data)
-    return {
-        "message": "Inicio de sesión exitoso"
-    }
+    return {"message": "Inicio de sesión exitoso"}
 
 
 @router.post(
     "/register",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Registra un nuevo usuario en el sistema (PUBLICO 🌐)"
+    summary="Registra un nuevo usuario en el sistema (PUBLICO 🌐)",
 )
 async def register(
     response: Response,
     user: UserCreate = Body(),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),  # noqa: B008
 ):
     """
 
@@ -66,7 +62,7 @@ async def register(
 @router.post(
     "/logout",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Cierra sesión en el sistema eliminando el token de acceso del usuario (PUBLICO 🌐)"
+    summary="Cierra sesión en el sistema eliminando el token de acceso del usuario (PUBLICO 🌐)",
 )
 async def logout(response: Response):
     """
@@ -78,4 +74,3 @@ async def logout(response: Response):
 
     """
     response.delete_cookie(key="auth_token")
-

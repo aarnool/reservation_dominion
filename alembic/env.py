@@ -1,16 +1,19 @@
-from logging.config import fileConfig
-from src.database import Base, DATABASE_URL
-from sqlalchemy.ext.asyncio import async_engine_from_config
-from sqlalchemy import pool
 import asyncio
-from alembic import context
-from src.models import *  
+from logging.config import fileConfig
 
+from sqlalchemy import pool
+from sqlalchemy.ext.asyncio import async_engine_from_config
+
+from alembic import context
+from src.database import DATABASE_URL, Base
+from src.models import *  # noqa: F401, RUF100
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", DATABASE_URL.render_as_string(hide_password=False))
+config.set_main_option(
+    "sqlalchemy.url", DATABASE_URL.render_as_string(hide_password=False)
+)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -51,12 +54,14 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
+
 def do_run_migrations(connection):
     """Run migrations with the given connection."""
     context.configure(connection=connection, target_metadata=target_metadata)
 
     with context.begin_transaction():
         context.run_migrations()
+
 
 async def run_migrations_online() -> None:
     """Run migrations in 'online' mode.

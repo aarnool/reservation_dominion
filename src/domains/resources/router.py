@@ -1,33 +1,40 @@
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, Response, status, Query, Security, Path
-from fastapi.security import SecurityScopes
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
-from src.dependencies import get_db
-from src.domains.resources.schemas import ResourceCreate, ResourceResponse, ResourceUpdate
-from src.domains.resources.service import create_resource, get_resources, update_resource, remove_resource, get_resource_by_id
-from src.dependencies import get_current_user
 
-router = APIRouter(
-    prefix="/resources",
-    tags=["Recursos"]
+from fastapi import APIRouter, Body, Depends, Path, Query, Response, Security, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.dependencies import get_current_user, get_db
+from src.domains.resources.schemas import (
+    ResourceCreate,
+    ResourceResponse,
+    ResourceUpdate,
 )
+from src.domains.resources.service import (
+    create_resource,
+    get_resource_by_id,
+    get_resources,
+    remove_resource,
+    update_resource,
+)
+
+router = APIRouter(prefix="/resources", tags=["Recursos"])
 
 
 @router.post(
-    "/", 
-    response_model=ResourceResponse, 
+    "/",
+    response_model=ResourceResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Crear un nuevo recurso (SOLO ADMINISTRADOR 🚫)",
 )
 async def create_resource_endpoint(
-    resource: Annotated[ResourceCreate, Body(
-        description="Datos del recurso a crear")],
+    resource: Annotated[ResourceCreate, Body(description="Datos del recurso a crear")],
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[dict, Security(get_current_user, scopes=["resources:create"])]
+    current_user: Annotated[
+        dict, Security(get_current_user, scopes=["resources:create"])
+    ],
 ):
-    
     """
-    
+
     ### **REQUIERE PERMISOS QUE SOLO POSEEN LOS ADMINISTRADORES 🚫🔒**
     Crea un nuevo recurso en el sistema que se conectara con las reservas.
     ### Detalles:
@@ -38,7 +45,6 @@ async def create_resource_endpoint(
     """
 
     return await create_resource(resource=resource, db=db)
-    
 
 
 @router.get(
@@ -50,14 +56,14 @@ async def create_resource_endpoint(
 async def get_resources_endpoint(
     response: Response,
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[dict, Security(get_current_user, scopes=["resources:read"])],
-    start: Annotated[int, Query(
-        description="Índice de inicio para la paginación")] = 0,
-    limit: Annotated[int, Query(
-        description="Número máximo de recursos a devolver")] = 10
-    
+    current_user: Annotated[
+        dict, Security(get_current_user, scopes=["resources:read"])
+    ],
+    start: Annotated[int, Query(description="Índice de inicio para la paginación")] = 0,
+    limit: Annotated[
+        int, Query(description="Número máximo de recursos a devolver")
+    ] = 10,
 ):
-    
     """
 
     ### **REQUIERE PERMISOS QUE POSEEN TODOS LOS USUARIOS 👥🔓**
@@ -67,7 +73,7 @@ async def get_resources_endpoint(
     - **limit**: Número máximo de recursos a devolver (opcional, por defecto 10)
 
     """
-    
+
     resource, total = await get_resources(db=db, start=start, limit=limit)
 
     response.headers["X-Total-Count"] = str(total)
@@ -83,7 +89,9 @@ async def get_resources_endpoint(
 async def get_resource_by_id_endpoint(
     resource_id: Annotated[int, Path(description="ID del recurso a obtener")],
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[dict, Security(get_current_user, scopes=["resources:read"])]
+    current_user: Annotated[
+        dict, Security(get_current_user, scopes=["resources:read"])
+    ],
 ):
     """
 
@@ -93,7 +101,7 @@ async def get_resource_by_id_endpoint(
     - **resource_id**: ID del recurso a obtener (obligatorio)
 
     """
-    
+
     return await get_resource_by_id(resource_id=resource_id, db=db)
 
 
@@ -105,9 +113,13 @@ async def get_resource_by_id_endpoint(
 )
 async def update_resource_endpoint(
     resource_id: Annotated[int, Path(description="ID del recurso a actualizar")],
-    resource_data: Annotated[ResourceUpdate, Body(description="Datos actualizados del recurso")],
+    resource_data: Annotated[
+        ResourceUpdate, Body(description="Datos actualizados del recurso")
+    ],
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[dict, Security(get_current_user, scopes=["resources:update"])]
+    current_user: Annotated[
+        dict, Security(get_current_user, scopes=["resources:update"])
+    ],
 ):
     """
 
@@ -118,9 +130,10 @@ async def update_resource_endpoint(
     - **resource_data**: Datos actualizados del recurso (obligatorio)
 
     """
-    
-    return await update_resource(resource_id=resource_id, resource_data=resource_data, db=db)
 
+    return await update_resource(
+        resource_id=resource_id, resource_data=resource_data, db=db
+    )
 
 
 @router.delete(
@@ -131,7 +144,9 @@ async def update_resource_endpoint(
 async def delete_resource_endpoint(
     resource_id: Annotated[int, Path(description="ID del recurso a eliminar")],
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[dict, Security(get_current_user, scopes=["resources:delete"])]
+    current_user: Annotated[
+        dict, Security(get_current_user, scopes=["resources:delete"])
+    ],
 ):
     """
 
@@ -141,6 +156,5 @@ async def delete_resource_endpoint(
     - **resource_id**: ID del recurso a eliminar (obligatorio)
 
     """
-    
+
     await remove_resource(resource_id=resource_id, db=db)
- 

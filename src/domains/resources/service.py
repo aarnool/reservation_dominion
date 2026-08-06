@@ -1,6 +1,6 @@
 from fastapi import Body, Security, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from src.dependencies import get_db, get_current_user
 from src.domains.resources.schemas import ResourceCreate, ResourceUpdate
@@ -70,11 +70,17 @@ async def get_resources(
 
     """
 
+    # Busqueda de recursos con paginación
     smtm = select(Resources).offset(start).limit(limit)
     result = await db.execute(smtm)
     resources = result.scalars().all()
 
-    return resources
+    # Conteo de recursos totales para la paginación
+    count_smtm = select(func.count()).select_from(Resources)
+    result_count = await db.execute(count_smtm)
+    total_count = result_count.scalar_one()
+
+    return resources, total_count
 
 
 

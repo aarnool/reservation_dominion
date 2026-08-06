@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, status, Query, Security, Path
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, Response, status, Query, Security, Path
 from fastapi.security import SecurityScopes
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
@@ -48,6 +48,7 @@ async def create_resource_endpoint(
     summary="Obtener una lista de recursos con paginación"
 )
 async def get_resources_endpoint(
+    response: Response,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[dict, Security(get_current_user, scopes=["resources:read"])],
     start: Annotated[int, Query(
@@ -66,7 +67,10 @@ async def get_resources_endpoint(
 
     """
     
-    return await get_resources(db=db, start=start, limit=limit)
+    resource, total = await get_resources(db=db, start=start, limit=limit)
+
+    response.headers["X-Total-Count"] = str(total)
+    return resource
 
 
 @router.get(

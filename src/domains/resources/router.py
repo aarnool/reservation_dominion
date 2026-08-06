@@ -15,20 +15,20 @@ router = APIRouter(
 
 @router.post(
     "/", 
-    tags=["Admin"],
     response_model=ResourceResponse, 
     status_code=status.HTTP_201_CREATED,
-    summary="Crear un nuevo recurso"
+    summary="Crear un nuevo recurso (SOLO ADMINISTRADOR 🚫)",
 )
 async def create_resource_endpoint(
-    resource: Annotated[ResourceCreate, Body(description="Datos del recurso a crear")],
+    resource: Annotated[ResourceCreate, Body(
+        description="Datos del recurso a crear")],
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[dict, Security(get_current_user, scopes=["resources:create"])]
 ):
     
     """
-
-    Crea un nuevo recurso en el sistema.
+    ### **REQUIERE PERMISOS QUE SOLO POSEEN LOS ADMINISTRADORES 🚫🔒**
+    Crea un nuevo recurso en el sistema que se conectara con las reservas.
     ### Detalles:
     - **name**: Nombre del recurso (obligatorio)
     - **description**: Descripción opcional del recurso
@@ -42,10 +42,9 @@ async def create_resource_endpoint(
 
 @router.get(
     "/",
-    tags=["Admin"],
     response_model=list[ResourceResponse],
     status_code=status.HTTP_200_OK,
-    summary="Obtener una lista de recursos con paginación"
+    summary="Obtener una lista de recursos con paginación (TODOS LOS USUARIOS 👥)",
 )
 async def get_resources_endpoint(
     response: Response,
@@ -59,7 +58,7 @@ async def get_resources_endpoint(
 ):
     
     """
-
+    ### **REQUIERE PERMISOS QUE POSEEN TODOS LOS USUARIOS 👥🔓**
     Obtiene una lista de recursos desde la base de datos con paginación.
     ### Detalles:
     - **start**: Índice de inicio para la paginación (opcional, por defecto 0)
@@ -77,7 +76,7 @@ async def get_resources_endpoint(
     "/{resource_id}",
     response_model=ResourceResponse,
     status_code=status.HTTP_200_OK,
-    summary="Obtener un recurso específico por ID"
+    summary="Obtener un recurso específico por ID (TODOS LOS USUARIOS 👥)",
 )
 async def get_resource_by_id_endpoint(
     resource_id: Annotated[int, Path(description="ID del recurso a obtener")],
@@ -85,6 +84,7 @@ async def get_resource_by_id_endpoint(
     current_user: Annotated[dict, Security(get_current_user, scopes=["resources:read"])]
 ):
     """
+    ### **REQUIERE PERMISOS QUE POSEEN TODOS LOS USUARIOS 👥🔓**
     Obtiene un recurso específico por su ID desde la base de datos.
     ### Detalles:
     - **resource_id**: ID del recurso a obtener (obligatorio)
@@ -95,10 +95,9 @@ async def get_resource_by_id_endpoint(
 
 @router.patch(
     "/{resource_id}",
-    tags=["Admin"],
     response_model=ResourceResponse,
     status_code=status.HTTP_200_OK,
-    summary="Actualizar un recurso existente"
+    summary="Actualizar un recurso existente (SOLO ADMINISTRADOR 🚫)",
 )
 async def update_resource_endpoint(
     resource_id: Annotated[int, Path(description="ID del recurso a actualizar")],
@@ -107,6 +106,7 @@ async def update_resource_endpoint(
     current_user: Annotated[dict, Security(get_current_user, scopes=["resources:update"])]
 ):
     """
+    ### **REQUIERE PERMISOS QUE SOLO POSEEN LOS ADMINISTRADORES 🚫🔒**
     Actualiza un recurso existente en la base de datos.
     ### Detalles:
     - **resource_id**: ID del recurso a actualizar (obligatorio)
@@ -119,9 +119,8 @@ async def update_resource_endpoint(
 
 @router.delete(
     "/{resource_id}",
-    tags=["Admin"],
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Eliminar un recurso existente"
+    summary="Eliminar un recurso existente (SOLO ADMINISTRADOR 🚫)",
 )
 async def delete_resource_endpoint(
     resource_id: Annotated[int, Path(description="ID del recurso a eliminar")],
@@ -129,6 +128,7 @@ async def delete_resource_endpoint(
     current_user: Annotated[dict, Security(get_current_user, scopes=["resources:delete"])]
 ):
     """
+    ### **REQUIERE PERMISOS QUE SOLO POSEEN LOS ADMINISTRADORES 🚫🔒**
     Elimina un recurso existente de la base de datos.
     ### Detalles:
     - **resource_id**: ID del recurso a eliminar (obligatorio)

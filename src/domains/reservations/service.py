@@ -88,6 +88,41 @@ async def get_reservations(
     return reservations, total
 
 
+# Servicio para obtener una reserva específica por su ID
+async def get_reservation_by_id(
+    reservation_id: int, db: AsyncSession, user_id: int | None = None
+) -> Reservation:
+    """
+
+    Obtiene una reserva específica por su ID desde la base de datos.
+    Args:
+        reservation_id (int): ID de la reserva a obtener.
+        db (AsyncSession): Sesión de base de datos asincrónica.
+        user_id (int | None): ID del usuario para filtrar, o None para todos los usuarios.
+    Raises:
+        HTTPException: Si la reserva no existe o no pertenece al usuario autenticado.
+    Returns:
+        Reservation: Objeto de la reserva obtenida.
+
+    """
+
+    smtm = select(Reservation).where(Reservation.id == reservation_id)
+
+    if user_id is not None:
+        smtm = smtm.where(Reservation.user_id == user_id)
+
+    result = await db.execute(smtm)
+    reservation = result.scalar_one_or_none()
+
+    if not reservation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reserva no encontrada o no pertenece al usuario autenticado",
+        )
+
+    return reservation
+
+
 # Verificar si la fecha del recurso está disponible para la reserva, considerando las reservas existentes y el estado de las mismas
 async def is_resource_available(
     resource_id: int,

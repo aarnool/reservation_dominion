@@ -96,6 +96,40 @@ async def get_reservations_endpoint(
     return reservations
 
 
+# Endpoint para obtener una reserva específica por su ID
+@router.get(
+    "/{reservation_id}",
+    response_model=ReservationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Obtiene una reserva específica por su ID (TODOS LOS USUARIOS CON PERMISOS 👥)",
+)
+async def get_reservation_by_id_endpoint(
+    reservation_id: Annotated[int, Path(description="ID de la reserva a obtener")],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[
+        dict, Security(get_current_user, scopes=["reservations:read"])
+    ],
+):
+    """
+
+    ### **REQUIERE PERMISOS QUE POSEEN TODOS LOS USUARIOS 👥🔓**
+    Obtiene una reserva específica por su ID.
+    Si el usuario tiene permisos de administrador, puede obtener cualquier reserva.
+    Si es un usuario regular, solo puede obtener sus propias reservas.
+    ### Detalles:
+    - **reservation_id**: ID de la reserva a obtener (obligatorio)
+
+    """
+
+    is_admin = "reservations:read_all" in current_user.get("scopes", [])
+
+    return await service.get_reservation_by_id(
+        db=db,
+        reservation_id=reservation_id,
+        user_id=None if is_admin else current_user["id"],
+    )
+
+
 # Endpoint para crear una nueva reserva
 @router.post(
     "/",

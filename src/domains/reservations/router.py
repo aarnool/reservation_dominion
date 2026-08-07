@@ -1,4 +1,3 @@
-from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Path, Query, Response, Security, status
@@ -10,8 +9,8 @@ from src.domains.reservations.schemas import (
     ReservationCreate,
     ReservationResponse,
     ReservationUpdate,
-    StatusReservation,
 )
+from src.domains.reservations.schemas import ReservationFilter
 
 router = APIRouter(prefix="/reservations", tags=["Reservas"])
 
@@ -29,38 +28,7 @@ async def get_reservations_endpoint(
     current_user: Annotated[
         dict, Security(get_current_user, scopes=["reservations:read"])
     ],
-    status_filter: Annotated[
-        StatusReservation | None,
-        Query(
-            alias="status",
-            description="Estado por el que filtrar las reservas (opcional)",
-        ),
-    ] = None,
-    filter_date: Annotated[
-        date | None,
-        Query(
-            alias="date",
-            description="Fecha exacta por la que filtrar las reservas en formato YYYY-MM-DD (opcional)",
-        ),
-    ] = None,
-    resource_ids: Annotated[
-        list[int] | None,
-        Query(
-            alias="resource_id",
-            description="Filtro opcional por múltiples IDs de recursos (opcional)",
-        ),
-    ] = None,
-    resource_name: Annotated[
-        str | None,
-        Query(
-            alias="resource_name",
-            description="Filtro opcional por nombre del recurso reservado (búsqueda parcial)",
-        ),
-    ] = None,
-    start: Annotated[int, Query(description="Índice de inicio para la paginación")] = 0,
-    limit: Annotated[
-        int, Query(description="Número máximo de reservas a devolver (opcional)")
-    ] = 10,
+    filter: Annotated[ReservationFilter, Query()],
 ):
     """
 
@@ -82,14 +50,7 @@ async def get_reservations_endpoint(
 
     # Llamamos al mismo servicio unificado para ambos casos
     reservations, total = await service.get_reservations(
-        db=db,
-        user_id=None if is_admin else current_user["id"],
-        status_filter=status_filter,
-        filter_date=filter_date,
-        resource_ids=resource_ids,
-        resource_name=resource_name,
-        start=start,
-        limit=limit,
+        db=db, user_id=None if is_admin else current_user["id"], filter=filter
     )
 
     response.headers["X-Total-Count"] = str(total)

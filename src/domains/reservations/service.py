@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from datetime import UTC, date, datetime, time
+from datetime import UTC, datetime, time
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -12,18 +12,14 @@ from src.domains.reservations.schemas import (
     StatusReservation,
 )
 from src.domains.resources.models import Resources
+from src.domains.reservations.schemas import ReservationFilter
 
 
 # Servicio para obtener una lista de reservas desde la base de datos con filtros opcionales y paginación
 async def get_reservations(
     db: AsyncSession,
+    filter: ReservationFilter,
     user_id: int | None = None,
-    status_filter: StatusReservation | None = None,
-    filter_date: date | None = None,
-    resource_ids: list[int] | None = None,
-    resource_name: str | None = None,
-    start: int = 0,
-    limit: int = 10,
 ) -> tuple[Sequence[Reservation], int]:
     """
 
@@ -32,12 +28,7 @@ async def get_reservations(
     Args:
         db (AsyncSession): Sesión de base de datos asincrónica.
         user_id (int | None): ID del usuario para filtrar, o None para todos los usuarios.
-        status_filter (StatusReservation | None): Filtro opcional por estado de la reserva.
-        filter_date (date | None): Filtro opcional por fecha exacta de la reserva.
-        resource_ids (List[int] | None): Filtro opcional por múltiples identificadores de recurso.
-        resource_name (str | None): Filtro opcional por nombre del recurso asociado (búsqueda parcial).
-        start (int): Índice inicial para la paginación (por defecto es 0).
-        limit (int): Número máximo de reservas a devolver (por defecto es 10).
+        filter (ReservationFilter | None): Filtro opcional que incluye estado, fecha, recursos y paginación.
     Returns:
         Tuple[Sequence[Reservation], int]: Una tupla con la lista de objetos Reservation y el total.
 
@@ -50,14 +41,18 @@ async def get_reservations(
         query = query.where(Reservation.user_id == user_id)
         count_query = count_query.where(Reservation.user_id == user_id)
 
-    if status_filter is not None:
-        query = query.where(Reservation.status_reservation == status_filter)
-        count_query = count_query.where(Reservation.status_reservation == status_filter)
+    if filter.status_reservation is not None:
+        query = query.where(Reservation.status_reservation == filter.status_reservation)
+        count_query = count_query.where(
+            Reservation.status_reservation == filter.status_reservation
+        )
 
-    if filter_date is not None:
+    if filter.filter_date is not None:
         # Convertimos la fecha a un rango de tiempo para filtrar las reservas que ocurren en ese día específico
-        start_of_day = datetime.combine(filter_date, time.min).replace(tzinfo=UTC)
-        end_of_day = datetime.combine(filter_date, time.max).replace(tzinfo=UTC)
+        start_of_day = datetime.combine(filter.filter_date, time.min).replace(
+            tzinfo=UTC
+        )
+        end_of_day = datetime.combine(filter.filter_date, time.max).replace(tzinfo=UTC)
 
         query = query.where(
             Reservation.start_time >= start_of_day, Reservation.start_time <= end_of_day
@@ -66,14 +61,18 @@ async def get_reservations(
             Reservation.start_time >= start_of_day, Reservation.start_time <= end_of_day
         )
 
-    if resource_ids is not None:
-        query = query.where(Reservation.resource_id.in_(resource_ids))
-        count_query = count_query.where(Reservation.resource_id.in_(resource_ids))
+    if filter.resource_ids is not None:
+        query = query.where(Reservation.resource_id.in_(filter.resource_ids))
+        count_query = count_query.where(
+            Reservation.resource_id.in_(filter.resource_ids)
+        )
 
-    if resource_name is not None:
-        query = query.join(Resources).where(Resources.name.ilike(f"%{resource_name}%"))
+    if filter.resource_name is not None:
+        query = query.join(Resources).where(
+            Resources.name.ilike(f"%{filter.resource_name}%")
+        )
         count_query = count_query.join(Resources).where(
-            Resources.name.ilike(f"%{resource_name}%")
+            Resources.name.ilike(f"%{filter.resource_name}%")
         )
 
     # Ejecutar conteo total
@@ -81,7 +80,7 @@ async def get_reservations(
     total = total_result.scalar_one()
 
     # Ejecutar búsqueda paginada
-    query = query.offset(start).limit(limit)
+    query = query.offset(filter.start).limit(filter.limit)
     result = await db.execute(query)
     reservations = result.scalars().all()
 

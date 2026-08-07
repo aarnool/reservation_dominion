@@ -60,7 +60,7 @@ async def test_get_reservations_filter_by_status(
     db_session.add_all([res1, res2])
     await db_session.commit()
 
-    response = await user_client.get("/reservations/?status=pending")
+    response = await user_client.get("/reservations/?status_reservation=pending")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1  # Solo hay una reserva pendiente

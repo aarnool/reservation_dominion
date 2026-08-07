@@ -5,6 +5,16 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 from src.domains.reservations.models import StatusReservation
 
 
+# Modelo para filtros
+class ReservationFilter(BaseModel):
+    status_reservation: StatusReservation | None = Field(default=None)
+    filter_date: AwareDatetime | None = Field(default=None)
+    resource_ids: list[int] | None = Field(default=None)
+    resource_name: str | None = Field(default=None)
+    start: int = Field(default=0)
+    limit: int = Field(default=10)
+
+
 # Esquemas para la creación, actualización y respuesta de reservas
 class ReservationBase(BaseModel):
     title: str = Field(description="Nombre del recurso")

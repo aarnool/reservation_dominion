@@ -47,12 +47,14 @@ async def get_reservations(
             Reservation.status_reservation == filter.status_reservation
         )
 
-    if filter.filter_date is not None:
+    if filter.specific_date is not None:
         # Convertimos la fecha a un rango de tiempo para filtrar las reservas que ocurren en ese día específico
-        start_of_day = datetime.combine(filter.filter_date, time.min).replace(
+        start_of_day = datetime.combine(filter.specific_date, time.min).replace(
             tzinfo=UTC
         )
-        end_of_day = datetime.combine(filter.filter_date, time.max).replace(tzinfo=UTC)
+        end_of_day = datetime.combine(filter.specific_date, time.max).replace(
+            tzinfo=UTC
+        )
 
         query = query.where(
             Reservation.start_time >= start_of_day, Reservation.start_time <= end_of_day
@@ -67,13 +69,13 @@ async def get_reservations(
             Reservation.resource_id.in_(filter.resource_ids)
         )
 
-    if filter.resource_name is not None:
-        query = query.join(Resources).where(
-            Resources.name.ilike(f"%{filter.resource_name}%")
-        )
-        count_query = count_query.join(Resources).where(
-            Resources.name.ilike(f"%{filter.resource_name}%")
-        )
+    # if filter.resource_name is not None:
+    #     query = query.join(Resources).where(
+    #         Resources.name.ilike(f"%{filter.resource_name}%")
+    #     )
+    #     count_query = count_query.join(Resources).where(
+    #         Resources.name.ilike(f"%{filter.resource_name}%")
+    #     )
 
     # Ejecutar conteo total
     total_result = await db.execute(count_query)

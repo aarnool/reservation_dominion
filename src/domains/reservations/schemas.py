@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import date
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
@@ -7,12 +8,17 @@ from src.domains.reservations.models import StatusReservation
 
 # Modelo para filtros
 class ReservationFilter(BaseModel):
-    status_reservation: StatusReservation | None = Field(default=None)
-    filter_date: AwareDatetime | None = Field(default=None)
-    resource_ids: list[int] | None = Field(default=None)
-    resource_name: str | None = Field(default=None)
-    start: int = Field(default=0)
-    limit: int = Field(default=10)
+    status_reservation: StatusReservation | None = Field(
+        default=None, description="Filtro por estado de la reserva"
+    )
+    specific_date: date | None = Field(
+        default=None, description="Filtro por fecha específica"
+    )
+    resource_ids: list[int] | None = Field(
+        default=None, description="Filtro por IDs de recursos"
+    )
+    start: int = Field(default=0, description="Índice de inicio para la paginación")
+    limit: int = Field(default=10, description="Número máximo de resultados a devolver")
 
 
 # Esquemas para la creación, actualización y respuesta de reservas

@@ -23,13 +23,9 @@ async def get_all_users(
         Sequence[User]: Lista de usuarios obtenidos de la base de datos.
     """
 
-    result = await db.execute(
-        select(User).where(User.role_id != 2).offset(start).limit(limit)
-    )
+    result = await db.execute(select(User).offset(start).limit(limit))
 
-    count_result = await db.execute(
-        select(func.count()).where(User.role_id != 2).select_from(User)
-    )
+    count_result = await db.execute(select(func.count()).select_from(User))
 
     total_count = count_result.scalar_one()
     users = result.scalars().all()

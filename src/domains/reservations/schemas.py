@@ -8,6 +8,10 @@ from src.domains.reservations.models import StatusReservation
 
 # Modelo para filtros
 class ReservationFilter(BaseModel):
+    user_id: int | None = Field(
+        default=None,
+        description="Filtro por ID de usuario que realizó la reserva (Solo para administradores)",
+    )
     status_reservation: StatusReservation | None = Field(
         default=None, description="Filtro por estado de la reserva"
     )

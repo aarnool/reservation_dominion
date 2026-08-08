@@ -48,9 +48,12 @@ async def get_reservations_endpoint(
 
     is_admin = "reservations:read_all" in current_user.get("scopes", [])
 
+    if not is_admin:
+        # Si no es administrador, ignoramos el user_id proporcionado y filtramos solo por el usuario actual
+        filter.user_id = current_user["id"]
     # Llamamos al mismo servicio unificado para ambos casos
     reservations, total = await service.get_reservations(
-        db=db, user_id=None if is_admin else current_user["id"], filter=filter
+        db=db, user_id=filter.user_id, filter=filter
     )
 
     response.headers["X-Total-Count"] = str(total)

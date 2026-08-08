@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     DB_PORT: int
     DB_NAME: str
     SECRET_KEY: SecretStr
+    RESEND_API_KEY: SecretStr
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

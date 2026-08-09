@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Form, Depends, Response, status, File, UploadFile
+from fastapi import APIRouter, Depends, Response, status, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.dependencies import get_db
-from src.domains.auth.schemas import UserCreate, UserResponse
+from src.domains.auth.schemas import UserCreate, UserResponse, user_create_from_form
 from src.domains.auth.service import create_user, login_user
+from typing import Annotated
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
@@ -40,9 +41,9 @@ async def login(
 )
 async def register(
     response: Response,
-    user: UserCreate = Depends(),
+    user: Annotated[UserCreate, Depends(user_create_from_form)],
     avatar: UploadFile | None = File(default=None),
-    db: AsyncSession = Depends(get_db),  # noqa: B008
+    db: AsyncSession = Depends(get_db),
 ):
     """
 

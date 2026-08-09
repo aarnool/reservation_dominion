@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Depends, Response, status
+from fastapi import APIRouter, Form, Depends, Response, status, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,7 +40,8 @@ async def login(
 )
 async def register(
     response: Response,
-    user: UserCreate = Body(),
+    user: UserCreate = Depends(),
+    avatar: UploadFile | None = File(default=None),
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ):
     """
@@ -56,7 +57,7 @@ async def register(
 
     """
 
-    return await create_user(user, db)
+    return await create_user(user, db, avatar)
 
 
 @router.post(

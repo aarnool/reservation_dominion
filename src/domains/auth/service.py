@@ -1,8 +1,12 @@
-from fastapi import HTTPException, Response, status
+from fastapi import HTTPException, Response, UploadFile, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+import uuid
+from src.core.utils import get_r2_client
+from src.config import settings
+from botocore.exceptions import ClientError
 
 from src.core.permissions import ROLES_SCOOPES
 from src.core.security import (
@@ -106,7 +110,9 @@ async def login_user(
 
 
 # Crea un nuevo usuario en la base de datos
-async def create_user(user_create: UserCreate, db: AsyncSession):
+async def create_user(
+    user_create: UserCreate, db: AsyncSession, avatar: UploadFile | None = None
+):
     """
 
     Crea un nuevo usuario en la base de datos.
@@ -130,9 +136,35 @@ async def create_user(user_create: UserCreate, db: AsyncSession):
             status_code=status.HTTP_409_CONFLICT,
             detail="El nombre de usuario/correo ya está en uso",
         )
+
+    avatar_url = None
+    if avatar is not None and avatar.filename:
+        file_extencion = (
+            avatar.filename.split(".")[-1] if "." in avatar.filename else "png"
+        )
+        unique_filename = f"{uuid.uuid4()}_avatar.{file_extencion}"
+
+        try:
+            get_r2_client().upload_fileobj(
+                avatar.file,
+                settings.R2_BUCKET_AVATAR,
+                unique_filename,
+                ExtraArgs={"ContentType": avatar.content_type},
+            )
+        except ClientError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error al subir el avatar: {str(e)}",
+            )
+        finally:
+            avatar.file.close()
+
+        avatar_url = f"{settings.R2_PUBLIC_DOMAIN}/{unique_filename}"
+
     password_hash = get_password_hash(user_create.password)
     new_user = User(
         username=user_create.username,
+        avatar_url=avatar_url,
         email=user_create.email,
         first_name=user_create.first_name,
         last_name=user_create.last_name,

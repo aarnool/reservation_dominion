@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Response, status, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import AsyncGenerator
 
 from src.dependencies import get_db
 from src.domains.auth.schemas import UserCreate, UserResponse, user_create_from_form
@@ -42,8 +43,8 @@ async def login(
 async def register(
     response: Response,
     user: Annotated[UserCreate, Depends(user_create_from_form)],
-    avatar: UploadFile | None = File(default=None),
-    db: AsyncSession = Depends(get_db),
+    db: Annotated[AsyncSession, Depends(get_db)],
+    avatar: Annotated[UploadFile | None, File()] = None,
 ):
     """
 

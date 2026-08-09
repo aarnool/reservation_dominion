@@ -71,7 +71,10 @@ class FileTypeValidator:
     def __init__(self, allowed_types: list[str]):
         self.allowed_types = allowed_types
 
-    async def __call__(self, file: UploadFile = File()) -> UploadFile:
+    async def __call__(self, file: UploadFile | None) -> UploadFile | None:
+        if file is None:
+            return None
+
         # Leer cabecera para chequear el Magic Number
         header_bytes = await file.read(2048)
         await file.seek(0)  # Resetear cursor

@@ -27,6 +27,7 @@ class User(Base):
     # Columnas de la tabla de usuarios
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    avatar_url: Mapped[str] = mapped_column(String(255), nullable=True)
     email: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(String(255), nullable=False)
     first_name: Mapped[str] = mapped_column(String(64), nullable=False)

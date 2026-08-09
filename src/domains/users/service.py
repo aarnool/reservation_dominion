@@ -43,10 +43,11 @@ async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
         User | None: Usuario encontrado o None si no existe.
     """
     result = await db.execute(select(User).where(User.id == user_id))
-    if result is None:
+    user = result.scalar_one_or_none()
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Usuario con ID {user_id} no encontrado",
         )
 
-    return result.scalar_one_or_none()
+    return user

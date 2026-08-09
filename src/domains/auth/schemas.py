@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
+from fastapi import Form
 
 
 # Schema base para la autenticación de usuarios
@@ -19,6 +20,23 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(
         description="Contraseña del usuario", min_length=8, examples=["123456"]
+    )
+
+
+# Funcion intermeda para aplastar el formulario de registro en un objeto UserCreate
+def user_create_from_form(
+    username: str = Form(),
+    email: EmailStr = Form(),
+    first_name: str = Form(),
+    last_name: str = Form(),
+    password: str = Form(),
+) -> UserCreate:
+    return UserCreate(
+        username=username,
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        password=password,
     )
 
 

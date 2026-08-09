@@ -159,3 +159,54 @@ async def test_cancel_reservation_success(
     resp2 = await user_client.patch(f"/reservations/{res_id}/cancel")
     assert resp2.status_code == 200
     assert resp2.json()["status_reservation"] == "cancelled"
+
+
+# Prueba obtener una reserva propia por su ID como usuario regular
+async def test_get_reservation_by_id_user_success(
+    user_client: AsyncClient, db_session: AsyncSession
+):
+    resource = Resources(name="Sala GetByID User", capacity=10)
+    db_session.add(resource)
+    await db_session.commit()
+    await db_session.refresh(resource)
+
+    res = Reservation(
+        user_id=2,
+        resource_id=resource.id,
+        title="Test GetByID User",
+        start_time=datetime(2026, 8, 20, 10, 0, tzinfo=UTC),
+        end_time=datetime(2026, 8, 20, 12, 0, tzinfo=UTC),
+    )
+    db_session.add(res)
+    await db_session.commit()
+    await db_session.refresh(res)
+
+    response = await user_client.get(f"/reservations/{res.id}")
+    assert response.status_code == 200
+    assert response.json()["title"] == "Test GetByID User"
+
+
+# Prueba obtener cualquier reserva por su ID como administrador
+async def test_get_reservation_by_id_admin_success(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    resource = Resources(name="Sala GetByID Admin", capacity=10)
+    db_session.add(resource)
+    await db_session.commit()
+    await db_session.refresh(resource)
+
+    res = Reservation(
+        user_id=2,  # Pertenece al usuario 2
+        resource_id=resource.id,
+        title="Test GetByID Admin",
+        start_time=datetime(2026, 8, 21, 10, 0, tzinfo=UTC),
+        end_time=datetime(2026, 8, 21, 12, 0, tzinfo=UTC),
+    )
+    db_session.add(res)
+    await db_session.commit()
+    await db_session.refresh(res)
+
+    response = await admin_client.get(f"/reservations/{res.id}")
+    assert response.status_code == 200
+    assert response.json()["title"] == "Test GetByID Admin"
+

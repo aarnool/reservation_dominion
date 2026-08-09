@@ -182,3 +182,24 @@ async def test_cancel_reservation_already_cancelled(
     await user_client.patch(f"/reservations/{res_id}/cancel")
     resp3 = await user_client.patch(f"/reservations/{res_id}/cancel")
     assert resp3.status_code == 409
+
+
+# Prueba obtener una reserva inexistente y espera 404 Not Found
+async def test_get_reservation_by_id_not_found(user_client: AsyncClient):
+    response = await user_client.get("/reservations/99999")
+    assert response.status_code == 404
+
+
+# Prueba actualizar una reserva inexistente y espera 404 Not Found
+async def test_update_reservation_not_found(user_client: AsyncClient):
+    response = await user_client.patch(
+        "/reservations/99999", json={"title": "No existe"}
+    )
+    assert response.status_code == 404
+
+
+# Prueba cancelar una reserva inexistente y espera 404 Not Found
+async def test_cancel_reservation_not_found(user_client: AsyncClient):
+    response = await user_client.patch("/reservations/99999/cancel")
+    assert response.status_code == 404
+

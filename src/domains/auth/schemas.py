@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -26,6 +25,10 @@ class UserCreate(UserBase):
 # Schema para la respuesta de usuario para el Response de los ENDPOINTS
 class UserResponse(UserBase):
     id: int = Field(description="ID único del usuario", examples=[1])
+    avatar_url: str | None = Field(
+        description="URL del avatar del usuario (opcional)",
+        examples=["https://example.com/avatar.png"],
+    )
     created_at: datetime = Field(
         description="Fecha y hora de creación del usuario",
         examples=["2023-01-01T12:00:00"],

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     R2_ACCESS_KEY_ID: str
     R2_SECRET_ACCESS_KEY: SecretStr
     R2_PUBLIC_DOMAIN: str
+    R2_BUCKET_AVATAR: str
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

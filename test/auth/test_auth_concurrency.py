@@ -10,9 +10,9 @@ async def test_register_conflict_exception(client: AsyncClient):
         "last_name": "User",
         "password": "password123",
     }
-    await client.post("/auth/register", json=user_data)  # Primera registro
+    await client.post("/auth/register", data=user_data)  # Primera registro
     response = await client.post(
-        "/auth/register", json=user_data
+        "/auth/register", data=user_data
     )  # Intento de registro duplicado
     assert response.status_code == 409
     assert response.json()["detail"] == "El nombre de usuario/correo ya está en uso"

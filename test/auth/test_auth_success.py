@@ -21,7 +21,8 @@ async def test_register_success(client: AsyncClient):
         "last_name": "User",
         "password": "password123",
     }
-    response = await client.post("/auth/register", json=user_data)
+    response = await client.post("/auth/register", data=user_data)
+    print(response.json())
     assert response.status_code == 201
     data = response.json()
     assert data["username"] == "testadmin"
@@ -31,14 +32,14 @@ async def test_register_success(client: AsyncClient):
 # Prueba el inicio de sesión exitoso.
 async def test_login_success(client: AsyncClient, db_session: AsyncSession):
 
-    passwoard_hash = get_password_hash("password123")
+    password_hash = get_password_hash("password123")
     db_session.add(
         User(
             username="loginsuccess",
             email="test@example.com",
             first_name="Test",
             last_name="User",
-            password=passwoard_hash,  # Hash de "password123"
+            password=password_hash,  # Hash de "password123"
         )
     )
     await db_session.commit()

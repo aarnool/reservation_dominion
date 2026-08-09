@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, Response, status, File, UploadFile
+from fastapi import APIRouter, Depends, Response, status, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.dependencies import get_db, valiate_image_file
+from src.dependencies import get_db
+from src.domains.auth.dependencies import valiate_image_file
 from src.domains.auth.schemas import UserCreate, UserResponse, user_create_from_form
 from src.domains.auth.service import create_user, login_user
 from typing import Annotated

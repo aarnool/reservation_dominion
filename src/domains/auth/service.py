@@ -142,7 +142,7 @@ async def create_user(
         file_extencion = (
             avatar.filename.split(".")[-1] if "." in avatar.filename else "png"
         )
-        unique_filename = f"{uuid.uuid4()}_avatar.{file_extencion}"
+        unique_filename = f"{uuid.uuid4()}.{file_extencion}"
 
         try:
             get_r2_client().upload_fileobj(
@@ -159,7 +159,7 @@ async def create_user(
         finally:
             avatar.file.close()
 
-        avatar_url = f"{settings.R2_PUBLIC_DOMAIN}/{unique_filename}"
+        avatar_url = f"{unique_filename}"
 
     password_hash = get_password_hash(user_create.password)
     new_user = User(

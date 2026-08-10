@@ -1,6 +1,7 @@
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy.ext.hybrid import hybrid_property
+from src.config import settings
 from src.database import Base
 
 
@@ -39,6 +40,17 @@ class User(Base):
     updated_at: Mapped[DateTime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
+
+    # Combinar el uuid del avatar con la URL base para obtener la URL completa del avatar
+    @hybrid_property
+    def avatar_full_url(self):  # type: ignore
+        if self.avatar_url:
+            return f"{settings.R2_PUBLIC_DOMAIN}/{self.avatar_url}"
+        return None
+
+    @avatar_full_url.expression
+    def avatar_full_url(cls):
+        return func.concat(settings.R2_PUBLIC_DOMAIN, "/", cls.avatar_url)
 
     # Relación muchos a uno con la tabla de roles
     role: Mapped["Role"] = relationship("Role", back_populates="users")  # type: ignore  # noqa: UP037

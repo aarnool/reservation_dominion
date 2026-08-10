@@ -43,7 +43,7 @@ def user_create_from_form(
 # Schema para la respuesta de usuario para el Response de los ENDPOINTS
 class UserResponse(UserBase):
     id: int = Field(description="ID único del usuario", examples=[1])
-    avatar_url: str | None = Field(
+    avatar_full_url: str | None = Field(
         description="URL del avatar del usuario (opcional)",
         examples=["https://example.com/avatar.png"],
     )

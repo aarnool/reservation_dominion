@@ -30,6 +30,14 @@ class Notification(Base):
     updated_at: Mapped[DateTime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
+    reservation_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("reservations.id"), nullable=True, index=True
+    )
 
     # Relación muchos a uno con la tabla de usuarios
     user: Mapped["User"] = relationship("User", back_populates="notifications")  # type: ignore  # noqa: F821, UP037
+
+    # Relación muchos a uno con la tabla de reservas
+    reservation: Mapped["Reservation"] = relationship(  # type: ignore  # noqa: F821, UP037
+        "Reservation", back_populates="notifications"
+    )

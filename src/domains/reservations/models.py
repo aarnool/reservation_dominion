@@ -45,3 +45,8 @@ class Reservation(Base):
     resource: Mapped["Resources"] = relationship(  # type: ignore  # noqa: F821, UP037
         "Resources", back_populates="reservations"
     )
+
+    # Relacion muchos a uno con la tabla de notificaciones
+    notifications: Mapped[list["Notification"]] = relationship(  # type: ignore  # noqa: F821, UP037
+        "Notification", back_populates="reservation", cascade="all, delete-orphan"
+    )

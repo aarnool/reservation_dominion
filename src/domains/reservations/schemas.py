@@ -20,6 +20,9 @@ class ReservationFilter(BaseModel):
     resource_ids: list[int] | None = Field(
         default=None, description="Filtro por IDs de recursos"
     )
+    code_reservation: str | None = Field(
+        default=None, description="Filtro por código de reserva"
+    )
     start: int = Field(default=0, description="Índice de inicio para la paginación")
     limit: int = Field(default=10, description="Número máximo de resultados a devolver")
 

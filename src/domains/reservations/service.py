@@ -71,13 +71,13 @@ async def get_reservations(
             Reservation.resource_id.in_(filter.resource_ids)
         )
 
-    # if filter.resource_name is not None:
-    #     query = query.join(Resources).where(
-    #         Resources.name.ilike(f"%{filter.resource_name}%")
-    #     )
-    #     count_query = count_query.join(Resources).where(
-    #         Resources.name.ilike(f"%{filter.resource_name}%")
-    #     )
+    if filter.code_reservation is not None:
+        query = query.where(
+            Reservation.code_reservation.ilike(f"%{filter.code_reservation}%")
+        )
+        count_query = count_query.where(
+            Reservation.code_reservation.ilike(f"%{filter.code_reservation}%")
+        )
 
     # Ejecutar conteo total
     total_result = await db.execute(count_query)

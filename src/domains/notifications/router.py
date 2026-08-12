@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, Body, status
 from typing import Annotated
+
+from fastapi import APIRouter, Body, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.domains.notifications.schemas import NotificationCreate, NotificationResponse
+
 from src.dependencies import get_db
 from src.domains.notifications import service
-
+from src.domains.notifications.schemas import NotificationCreate, NotificationResponse
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 

@@ -7,10 +7,10 @@ from src.dependencies import get_current_user, get_db
 from src.domains.reservations import service
 from src.domains.reservations.schemas import (
     ReservationCreate,
+    ReservationFilter,
     ReservationResponse,
     ReservationUpdate,
 )
-from src.domains.reservations.schemas import ReservationFilter
 
 router = APIRouter(prefix="/reservations", tags=["Reservas"])
 

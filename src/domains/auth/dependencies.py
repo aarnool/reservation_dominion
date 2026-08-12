@@ -1,5 +1,5 @@
-from fastapi import UploadFile, HTTPException, status
 import magic
+from fastapi import HTTPException, UploadFile, status
 
 
 # Dependecia para obtener el MIME type del archivo subido, si no es un archivo valido lanza una excepcion

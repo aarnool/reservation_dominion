@@ -1,6 +1,7 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field
+
 from fastapi import Form
+from pydantic import BaseModel, EmailStr, Field
 
 
 # Schema base para la autenticación de usuarios

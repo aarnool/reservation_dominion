@@ -1,13 +1,13 @@
+import uuid
+
+from botocore.exceptions import ClientError
 from fastapi import HTTPException, Response, UploadFile, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-import uuid
-from src.core.utils import get_r2_client
-from src.config import settings
-from botocore.exceptions import ClientError
 
+from src.config import settings
 from src.core.permissions import ROLES_SCOOPES
 from src.core.security import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
@@ -16,6 +16,7 @@ from src.core.security import (
     get_password_hash,
     verify_password,
 )
+from src.core.utils import get_r2_client
 from src.domains.auth.models import User
 from src.domains.auth.schemas import UserCreate
 
@@ -154,7 +155,7 @@ async def create_user(
         except ClientError as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error al subir el avatar: {str(e)}",
+                detail=f"Error al subir el avatar: {e}",
             )
         finally:
             avatar.file.close()

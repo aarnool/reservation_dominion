@@ -1,9 +1,10 @@
 from datetime import UTC
 
+import boto3
 from sqlalchemy import DateTime
 from sqlalchemy.types import TypeDecorator
+
 from src.config import settings
-import boto3
 
 
 class TZDateTime(TypeDecorator):

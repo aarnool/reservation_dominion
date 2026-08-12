@@ -5,6 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.domains.notifications.service import create_notifications_by_admins
 from src.domains.reservations.models import Reservation
 from src.domains.reservations.schemas import (
     ReservationCreate,
@@ -168,7 +169,9 @@ async def is_resource_available(
 
 # Servicio para crear una reserva en la base de datos
 async def create_reservation(
-    user_id: int, reservation: ReservationCreate, db: AsyncSession
+    user_id: int,
+    reservation: ReservationCreate,
+    db: AsyncSession,
 ) -> Reservation:
     """
 
@@ -219,6 +222,9 @@ async def create_reservation(
     await db.commit()
     await db.refresh(new_reservation)
 
+    # Crear notificaciones para todos los administradores cuando se crea una nueva reserva
+
+    await create_notifications_by_admins(db, new_reservation.id)
     return new_reservation
 
 

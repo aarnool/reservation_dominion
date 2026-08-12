@@ -27,7 +27,7 @@ class UserCreate(UserBase):
 # Funcion intermeda para aplastar el formulario de registro en un objeto UserCreate
 def user_create_from_form(
     username: str = Form(),
-    email: EmailStr = Form(),
+    email: EmailStr = Form(),  # noqa: B008
     first_name: str = Form(),
     last_name: str = Form(),
     password: str = Form(),

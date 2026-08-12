@@ -8,11 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domains.reservations.models import Reservation
 from src.domains.reservations.schemas import (
     ReservationCreate,
+    ReservationFilter,
     ReservationUpdate,
     StatusReservation,
 )
 from src.domains.resources.models import Resources
-from src.domains.reservations.schemas import ReservationFilter
 
 
 # Servicio para obtener una lista de reservas desde la base de datos con filtros opcionales y paginación

@@ -31,7 +31,10 @@ class Notification(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
     reservation_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("reservations.id"), nullable=True, index=True
+        Integer,
+        ForeignKey("reservations.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
     )
 
     # Relación muchos a uno con la tabla de usuarios

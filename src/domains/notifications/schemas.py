@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -20,8 +22,10 @@ class NotificationCreate(NotificationBase):
 class NotificationResponse(NotificationBase):
     id: int = Field(description="ID de la notificación")
 
-    created_at: str = Field(description="Fecha de creación de la notificación")
-    updated_at: str = Field(description="Fecha de actualización de la notificación")
+    created_at: datetime = Field(description="Fecha de creación de la notificación")
+    updated_at: datetime = Field(
+        description="Fecha de actualización de la notificación"
+    )
     model_config = {
         "from_attributes": True,
     }

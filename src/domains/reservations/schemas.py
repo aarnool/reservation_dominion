@@ -29,6 +29,7 @@ class ReservationBase(BaseModel):
     title: str = Field(description="Nombre del recurso")
     description: str | None = Field(default=None, description="Descripción del recurso")
     resource_id: int = Field(description="Identificador del recurso a reservar")
+
     start_time: AwareDatetime = Field(
         description="Fecha y hora de inicio de la reserva"
     )
@@ -57,6 +58,9 @@ class ReservationResponse(ReservationBase):
         default=StatusReservation.PENDING, description="Estado de la reserva"
     )
     resource_id: int = Field(description="Identificador del recurso reservado")
+    code_reservation: str = Field(
+        description="Código único de la reserva para referencia rápida"
+    )
     created_at: datetime = Field(description="Fecha y hora de creación de la reserva")
     updated_at: datetime = Field(
         description="Fecha y hora de última actualización de la reserva"

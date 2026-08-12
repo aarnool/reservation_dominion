@@ -5,6 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.utils import generate_random_reservation_code
 from src.domains.notifications.service import create_notifications_by_admins
 from src.domains.reservations.models import Reservation
 from src.domains.reservations.schemas import (
@@ -212,6 +213,7 @@ async def create_reservation(
     new_reservation = Reservation(
         user_id=user_id,
         resource_id=reservation.resource_id,
+        code_reservation=generate_random_reservation_code(),
         title=reservation.title,
         description=reservation.description,
         start_time=reservation.start_time,

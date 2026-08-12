@@ -1,3 +1,5 @@
+import secrets
+import string
 from datetime import UTC
 
 import boto3
@@ -37,3 +39,20 @@ def get_r2_client():
         aws_secret_access_key=settings.R2_SECRET_ACCESS_KEY.get_secret_value(),
         region_name="auto",  # R2 no requiere una región específica, pero boto3 necesita un valor
     )
+
+
+def generate_random_reservation_code():
+    """
+    Genera un código de reserva aleatorio de 10 caracteres que incluye letras mayúsculas,
+    minúsculas, dígitos y caracteres especiales.
+
+    Returns:
+        str: Cadena aleatoria generada.
+    """
+    # Define el conjunto de caracteres que se pueden usar para generar el código alfabeto ASCII y dígitos 0-9
+    characters = string.ascii_letters + string.digits
+    reservation_code = ""
+    # Genera un código de 10 caracteres aleatorios
+    for _ in range(10):
+        reservation_code += secrets.choice(characters)
+    return reservation_code

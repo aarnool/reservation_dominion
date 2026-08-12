@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domains.auth.models import User
 from src.domains.notifications.models import Notification
-from src.domains.notifications.schemas import NotificationCreate
+from src.domains.notifications.schemas import NotificationCreate, NotificationResponse
 
 
 async def create_notification(
@@ -57,3 +57,22 @@ async def create_notifications_by_admins(db: AsyncSession, reservation_id: int) 
         db.add(new_notification)
         await db.commit()
         await db.refresh(new_notification)
+
+
+async def get_notifications(
+    db: AsyncSession, start: int, limit: int
+) -> list[NotificationResponse]:
+    """
+    Obtiene todas las notificaciones de la base de datos.
+
+    Args:
+        db: Sesión de la base de datos.
+        start: Índice de inicio para la paginación.
+        limit: Número máximo de notificaciones a devolver.
+
+    Returns:
+        Lista de notificaciones.
+    """
+    result = await db.execute(select(Notification).offset(start).limit(limit))
+    notifications = result.scalars().all()
+    return notifications  # type: ignore

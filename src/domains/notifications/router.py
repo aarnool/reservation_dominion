@@ -1,35 +1,39 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, status
+from fastapi import APIRouter, Depends, Query, Security, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.dependencies import get_db
+from src.dependencies import get_current_user, get_db
 from src.domains.notifications import service
-from src.domains.notifications.schemas import NotificationCreate, NotificationResponse
+from src.domains.notifications.schemas import NotificationResponse
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 
-@router.post(
-    "/", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED
+@router.get(
+    "/", response_model=list[NotificationResponse], status_code=status.HTTP_200_OK
 )
-async def create_notification(
-    notification: Annotated[NotificationCreate, Body()],
+async def get_notifications(
     db: Annotated[AsyncSession, Depends(get_db)],
-):
+    current_user: Annotated[
+        dict, Security(get_current_user, scopes=["notifications:read"])
+    ],
+    start: Annotated[int, Query(description="Índice de inicio para la paginación")] = 0,
+    limit: Annotated[
+        int, Query(description="Número máximo de notificaciones a devolver")
+    ] = 10,
+) -> list[NotificationResponse]:
     """
-    Crea una nueva notificación.
+    Obtiene todas las notificaciones de un usuario específico.
 
     Args:
-        notification: Datos de la notificación a crear.
         db: Sesión de la base de datos.
+        current_user: Usuario actual.
+        start: Índice de inicio para la paginación.
+        limit: Número máximo de notificaciones a devolver.
 
     Returns:
-        La notificación creada.
+        Una lista de notificaciones del usuario.
     """
-    # Aquí deberías llamar a tu servicio para crear la notificación en la base de datos
-    # Por ejemplo:
-    # new_notification = await create_notification_service(notification)
-    # return new_notification
-
-    return await service.create_notification(db, notification)
+    notifications = await service.get_notifications(db, start, limit)
+    return notifications

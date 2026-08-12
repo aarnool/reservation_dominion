@@ -15,6 +15,8 @@ ROLES_SCOOPES = {
         "reservations:cancel",
         # Permisos de Usuarios
         "users:read",
+        # Permisos de Notificaciones
+        "notifications:read",
     ],
     "user": [
         # Permisos de Recursos

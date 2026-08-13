@@ -26,7 +26,7 @@ class Reservation(Base):
     resource_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("resources.id"), nullable=False
     )
-    code_reservation: Mapped[str] = mapped_column(CHAR(10), unique=True, nullable=False)
+    code_reservation: Mapped[str] = mapped_column(CHAR(10), unique=True, nullable=True)
     title: Mapped[str] = mapped_column(String(124), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
     start_time: Mapped[DateTime] = mapped_column(TZDateTime, nullable=False)

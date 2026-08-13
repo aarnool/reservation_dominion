@@ -13,7 +13,7 @@ router = APIRouter(prefix="/notifications", tags=["Notifications"])
 @router.get(
     "/", response_model=list[NotificationResponse], status_code=status.HTTP_200_OK
 )
-async def get_notifications(
+async def get_notifications_endpoint(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[
         dict, Security(get_current_user, scopes=["notifications:read"])

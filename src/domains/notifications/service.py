@@ -1,10 +1,10 @@
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domains.auth.models import User
 from src.domains.notifications.models import Notification
 from src.domains.notifications.schemas import NotificationCreate, NotificationResponse
-from fastapi import HTTPException, status
 
 
 async def create_notification(

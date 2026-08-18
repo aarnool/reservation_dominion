@@ -27,6 +27,7 @@ dependencies = [
     "wtforms>=3.2.2",
 ]
 
+# Entrada de la aplicacion/configurada para que lea el archivo main como el entrypoint del API
 [tool.fastapi]
 entrypoint = "src.main:app"
 

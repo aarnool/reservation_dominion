@@ -19,3 +19,20 @@ async def test_get_all_notifications(
     response = await admin_client.get("/notifications/")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+
+
+async def test_get_notification_by_id(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    notification = Notification(
+        type_notification="info",
+        message="Este es un mensaje de prueba",
+        user_id=1,
+    )
+    db_session.add(notification)
+    await db_session.commit()
+    await db_session.refresh(notification)
+
+    response = await admin_client.get(f"/notifications/{notification.id}")
+    assert response.status_code == 200
+    assert response.json()["id"] == notification.id

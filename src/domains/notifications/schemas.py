@@ -10,8 +10,8 @@ class NotificationBase(BaseModel):
         default=False, description="Indica si la notificación ha sido leída"
     )
     user_id: int = Field(description="ID del usuario al que pertenece la notificación")
-    reservation_id: int = Field(
-        description="ID de la reserva asociada a la notificación"
+    reservation_id: int | None = Field(
+        default=None, description="ID de la reserva asociada a la notificación"
     )
 
 

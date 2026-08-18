@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domains.auth.models import User
 from src.domains.notifications.models import Notification
 from src.domains.notifications.schemas import NotificationCreate, NotificationResponse
+from fastapi import HTTPException, status
 
 
 async def create_notification(
@@ -76,3 +77,28 @@ async def get_notifications(
     result = await db.execute(select(Notification).offset(start).limit(limit))
     notifications = result.scalars().all()
     return notifications  # type: ignore
+
+
+async def get_notification_by_id(
+    db: AsyncSession, notification_id: int
+) -> NotificationResponse | None:
+    """
+    Obtiene una notificación por su ID.
+
+    Args:
+        db: Sesión de la base de datos.
+        notification_id: ID de la notificación a obtener.
+
+    Returns:
+        La notificación encontrada o None si no existe.
+    """
+    result = await db.execute(
+        select(Notification).where(Notification.id == notification_id)
+    )
+    notification = result.scalar_one_or_none()
+    if notification is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Notificación con ID {notification_id} no encontrada",
+        )
+    return notification  # type: ignore

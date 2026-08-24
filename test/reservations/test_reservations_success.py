@@ -161,6 +161,32 @@ async def test_cancel_reservation_success(
     assert resp2.json()["status_reservation"] == "cancelled"
 
 
+# Verifica que un administrador pueda cancelar la reserva de otro usuario
+async def test_cancel_reservation_admin_can_cancel_other_user(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+
+    resource = Resources(name="Sala Cancel Admin", capacity=20)
+    db_session.add(resource)
+    await db_session.commit()
+    await db_session.refresh(resource)
+
+    reservation = Reservation(
+        user_id=2,
+        resource_id=resource.id,
+        title="Test Cancel Admin",
+        start_time=datetime(2026, 8, 18, 9, 0, tzinfo=UTC),
+        end_time=datetime(2026, 8, 18, 11, 0, tzinfo=UTC),
+    )
+    db_session.add(reservation)
+    await db_session.commit()
+    await db_session.refresh(reservation)
+
+    response = await admin_client.patch(f"/reservations/{reservation.id}/cancel")
+    assert response.status_code == 200
+    assert response.json()["status_reservation"] == "cancelled"
+
+
 # Prueba obtener una reserva propia por su ID como usuario regular
 async def test_get_reservation_by_id_user_success(
     user_client: AsyncClient, db_session: AsyncSession
@@ -209,4 +235,3 @@ async def test_get_reservation_by_id_admin_success(
     response = await admin_client.get(f"/reservations/{res.id}")
     assert response.status_code == 200
     assert response.json()["title"] == "Test GetByID Admin"
-

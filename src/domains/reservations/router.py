@@ -216,5 +216,8 @@ async def cancel_reservation_endpoint(
     """
 
     return await service.cancel_own_reservation(
-        user_id=current_user["id"], reservation_id=reservation_id, db=db
+        user_id=current_user["id"],
+        user_role=current_user.get("role"),
+        reservation_id=reservation_id,
+        db=db,
     )

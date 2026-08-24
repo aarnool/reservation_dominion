@@ -354,28 +354,36 @@ async def approve_reservation(reservation_id: int, db: AsyncSession) -> Reservat
 
 
 async def cancel_own_reservation(
-    reservation_id: int, user_id: int, db: AsyncSession
+    reservation_id: int,
+    user_id: int,
+    db: AsyncSession,
+    user_role: str | None = None,
 ) -> Reservation:
     """
-    Cancela una reserva existente realizada por el usuario autenticado.
+    Cancela una reserva existente.
+    Un usuario normal solo puede cancelar sus propias reservas; un administrador puede cancelar cualquier reserva.
     Args:
         reservation_id (int): ID de la reserva a cancelar.
         user_id (int): ID del usuario autenticado que realiza la cancelación.
         db (AsyncSession): Sesión de base de datos asincrónica.
+        user_role (str | None): Rol del usuario autenticado para permitir cancelaciones administrativas.
     Raises:
-        HTTPException: Si la reserva no existe o no pertenece al usuario autenticado.
+        HTTPException: Si la reserva no existe o no pertenece al usuario autenticado (para usuarios normales).
     Returns:
         Reservation: Objeto de la reserva cancelada.
 
     """
 
-    smtm = select(Reservation).where(
-        Reservation.id == reservation_id, Reservation.user_id == user_id
-    )
-    result = await db.execute(smtm)
-    reservation = result.scalar_one_or_none()
+    reservation = await db.get(Reservation, reservation_id)
 
     if not reservation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reserva no encontrada",
+        )
+
+    is_admin = user_role == "admin"
+    if not is_admin and reservation.user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Reserva no encontrada o no pertenece al usuario autenticado",

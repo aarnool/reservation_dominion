@@ -91,3 +91,65 @@ async def test_user_get_resources_success(
 
     response = await user_client.get("/resources/")
     assert response.status_code == 200
+
+
+# Prueba filtrado dinámico de recursos por capacidad mínima
+async def test_get_resources_filter_min_capacity(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    res_small = Resources(name="Pequeña Sala", capacity=5)
+    res_large = Resources(name="Gran Auditorio", capacity=50)
+    db_session.add_all([res_small, res_large])
+    await db_session.commit()
+
+    response = await admin_client.get("/resources/?min_capacity=20")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["name"] == "Gran Auditorio"
+    assert data[0]["capacity"] == 50
+
+
+# Prueba filtrado dinámico de recursos por disponibilidad en rango horario
+async def test_get_resources_filter_availability_slot(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    from datetime import datetime, timezone
+    from src.domains.reservations.models import Reservation, StatusReservation
+
+    res_busy = Resources(name="Sala Ocupada", capacity=10)
+    res_free = Resources(name="Sala Libre", capacity=15)
+    db_session.add_all([res_busy, res_free])
+    await db_session.commit()
+    await db_session.refresh(res_busy)
+
+    # Crear una reserva dinámica para res_busy
+    now = datetime.now(timezone.utc)
+    start = now.replace(hour=10, minute=0, second=0, microsecond=0)
+    end = now.replace(hour=12, minute=0, second=0, microsecond=0)
+
+    resv = Reservation(
+        user_id=1,
+        resource_id=res_busy.id,
+        title="Reserva Conferencia",
+        start_time=start,
+        end_time=end,
+        status_reservation=StatusReservation.CONFIRMED,
+    )
+    db_session.add(resv)
+    await db_session.commit()
+
+    # Consulta durante el horario ocupado (10:30 a 11:30)
+    search_start = start.replace(minute=30).strftime("%Y-%m-%dT%H:%M:%SZ")
+    search_end = start.replace(hour=11, minute=30).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    response = await admin_client.get(
+        f"/resources/?start_time={search_start}&end_time={search_end}"
+    )
+    assert response.status_code == 200
+    data = response.json()
+
+    # Solo debe retornar la sala libre
+    resource_names = [r["name"] for r in data]
+    assert "Sala Libre" in resource_names
+    assert "Sala Ocupada" not in resource_names

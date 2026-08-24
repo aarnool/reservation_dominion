@@ -47,11 +47,14 @@ async def create_resource_endpoint(
     return await create_resource(resource=resource, db=db)
 
 
+from datetime import datetime
+
+
 @router.get(
     "/",
     response_model=list[ResourceResponse],
     status_code=status.HTTP_200_OK,
-    summary="Obtener una lista de recursos con paginación (TODOS LOS USUARIOS 👥)",
+    summary="Obtener una lista de recursos con paginación y filtros de disponibilidad/capacidad (TODOS LOS USUARIOS 👥)",
 )
 async def get_resources_endpoint(
     response: Response,
@@ -59,6 +62,20 @@ async def get_resources_endpoint(
     current_user: Annotated[
         dict, Security(get_current_user, scopes=["resources:read"])
     ],
+    min_capacity: Annotated[
+        int | None, Query(description="Filtro por capacidad mínima requerida", ge=1)
+    ] = None,
+    capacity: Annotated[
+        int | None, Query(description="Filtro por capacidad exacta requerida", ge=1)
+    ] = None,
+    start_time: Annotated[
+        datetime | None,
+        Query(description="Hora de inicio para verificar disponibilidad del recurso"),
+    ] = None,
+    end_time: Annotated[
+        datetime | None,
+        Query(description="Hora de fin para verificar disponibilidad del recurso"),
+    ] = None,
     start: Annotated[int, Query(description="Índice de inicio para la paginación")] = 0,
     limit: Annotated[
         int, Query(description="Número máximo de recursos a devolver")
@@ -67,14 +84,26 @@ async def get_resources_endpoint(
     """
 
     ### **REQUIERE PERMISOS QUE POSEEN TODOS LOS USUARIOS 👥🔓**
-    Obtiene una lista de recursos desde la base de datos con paginación.
+    Obtiene una lista de recursos desde la base de datos permitiendo filtrar por capacidad y disponibilidad en rango horario.
     ### Detalles:
+    - **min_capacity**: Capacidad mínima del recurso (opcional)
+    - **capacity**: Capacidad requerida (opcional)
+    - **start_time**: Fecha/hora inicial de disponibilidad deseada (opcional)
+    - **end_time**: Fecha/hora final de disponibilidad deseada (opcional)
     - **start**: Índice de inicio para la paginación (opcional, por defecto 0)
     - **limit**: Número máximo de recursos a devolver (opcional, por defecto 10)
 
     """
 
-    resource, total = await get_resources(db=db, start=start, limit=limit)
+    resource, total = await get_resources(
+        db=db,
+        start=start,
+        limit=limit,
+        min_capacity=min_capacity,
+        capacity=capacity,
+        start_time=start_time,
+        end_time=end_time,
+    )
 
     response.headers["X-Total-Count"] = str(total)
     return resource

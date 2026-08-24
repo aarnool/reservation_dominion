@@ -36,3 +36,43 @@ async def test_get_notification_by_id(
     response = await admin_client.get(f"/notifications/{notification.id}")
     assert response.status_code == 200
     assert response.json()["id"] == notification.id
+
+
+# Prueba para filtrar notificaciones por estado de lectura (is_read)
+async def test_filter_notifications_by_is_read(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    notif_unread = Notification(
+        type_notification="info", message="No leída", is_read=False, user_id=1
+    )
+    notif_read = Notification(
+        type_notification="info", message="Leída", is_read=True, user_id=1
+    )
+    db_session.add_all([notif_unread, notif_read])
+    await db_session.commit()
+
+    response = await admin_client.get("/notifications/?is_read=false")
+    assert response.status_code == 200
+    messages = [n["message"] for n in response.json()]
+    assert "No leída" in messages
+    assert "Leída" not in messages
+
+
+# Prueba para filtrar notificaciones por tipo de notificación
+async def test_filter_notifications_by_type(
+    admin_client: AsyncClient, db_session: AsyncSession
+):
+    notif_res = Notification(
+        type_notification="reservation", message="Notif Reserva", user_id=1
+    )
+    notif_acc = Notification(
+        type_notification="account", message="Notif Cuenta", user_id=1
+    )
+    db_session.add_all([notif_res, notif_acc])
+    await db_session.commit()
+
+    response = await admin_client.get("/notifications/?type_notification=reservation")
+    assert response.status_code == 200
+    messages = [n["message"] for n in response.json()]
+    assert "Notif Reserva" in messages
+    assert "Notif Cuenta" not in messages

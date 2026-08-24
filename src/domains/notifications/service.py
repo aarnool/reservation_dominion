@@ -60,23 +60,52 @@ async def create_notifications_by_admins(db: AsyncSession, reservation_id: int) 
         await db.refresh(new_notification)
 
 
+from src.domains.notifications.models import Notification, TypeNotification
+from src.domains.notifications.schemas import NotificationCreate, NotificationResponse
+
+
 async def get_notifications(
-    db: AsyncSession, start: int, limit: int
-) -> list[NotificationResponse]:
+    db: AsyncSession,
+    start: int = 0,
+    limit: int = 10,
+    is_read: bool | None = None,
+    type_notification: TypeNotification | None = None,
+    user_id: int | None = None,
+) -> tuple[list[NotificationResponse], int]:
     """
-    Obtiene todas las notificaciones de la base de datos.
+    Obtiene todas las notificaciones de la base de datos con filtros opcionales.
 
     Args:
         db: Sesión de la base de datos.
         start: Índice de inicio para la paginación.
         limit: Número máximo de notificaciones a devolver.
+        is_read: Filtro por estado de lectura (opcional).
+        type_notification: Filtro por tipo de notificación (opcional).
+        user_id: Filtro por ID de usuario destinatario (opcional).
 
     Returns:
-        Lista de notificaciones.
+        Tupla con lista de notificaciones y el conteo total.
     """
-    result = await db.execute(select(Notification).offset(start).limit(limit))
+    from sqlalchemy import func
+
+    query = select(Notification)
+
+    if is_read is not None:
+        query = query.where(Notification.is_read == is_read)
+    if type_notification is not None:
+        query = query.where(Notification.type_notification == type_notification)
+    if user_id is not None:
+        query = query.where(Notification.user_id == user_id)
+
+    # Conteo total
+    count_query = select(func.count()).select_from(query.subquery())
+    total_result = await db.execute(count_query)
+    total = total_result.scalar_one()
+
+    # Ejecutar paginación
+    result = await db.execute(query.offset(start).limit(limit))
     notifications = result.scalars().all()
-    return notifications  # type: ignore
+    return notifications, total  # type: ignore
 
 
 async def get_notification_by_id(

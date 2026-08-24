@@ -45,29 +45,64 @@ async def create_resource(resource: ResourceCreate, db: AsyncSession) -> Resourc
     return new_resource
 
 
-# Servicio para obtener una lista de recursos desde la base de datos con paginación
-async def get_resources(db: AsyncSession, start: int = 0, limit: int = 10):
-    """
+from datetime import datetime
 
-    Obtiene una lista de recursos desde la base de datos con paginación.
+
+# Servicio para obtener una lista de recursos desde la base de datos con paginación y filtros
+async def get_resources(
+    db: AsyncSession,
+    start: int = 0,
+    limit: int = 10,
+    min_capacity: int | None = None,
+    capacity: int | None = None,
+    start_time: datetime | None = None,
+    end_time: datetime | None = None,
+):
+    """
+    Obtiene una lista de recursos desde la base de datos con paginación y filtros.
+
     Args:
         db (AsyncSession): Sesión de base de datos asincrónica.
-        start (int): Índice inicial para la paginación (por defecto es 0).
-        limit (int): Número máximo de recursos a devolver (por defecto es 10).
+        start (int): Índice inicial para la paginación.
+        limit (int): Número máximo de recursos a devolver.
+        min_capacity (int | None): Capacidad mínima requerida.
+        capacity (int | None): Capacidad exacta requerida.
+        start_time (datetime | None): Hora de inicio para verificar disponibilidad.
+        end_time (datetime | None): Hora de fin para verificar disponibilidad.
+
     Returns:
-        List[Resources]: Una lista de objetos Resources que representan los recursos obtenidos.
-
+        Tuple[List[Resources], int]: Lista de recursos y conteo total.
     """
+    smtm = select(Resources)
 
-    # Busqueda de recursos con paginación
-    smtm = select(Resources).offset(start).limit(limit)
-    result = await db.execute(smtm)
-    resources = result.scalars().all()
+    # Filtro por capacidad mínima o exacta
+    target_capacity = min_capacity if min_capacity is not None else capacity
+    if target_capacity is not None:
+        smtm = smtm.where(Resources.capacity >= target_capacity)
 
-    # Conteo de recursos totales para la paginación
-    count_smtm = select(func.count()).select_from(Resources)
+    # Filtro por disponibilidad en rango horario [start_time, end_time]
+    if start_time is not None and end_time is not None:
+        from src.domains.reservations.models import Reservation, StatusReservation
+        overlapping = (
+            select(Reservation.id)
+            .where(
+                Reservation.resource_id == Resources.id,
+                Reservation.status_reservation != StatusReservation.CANCELLED,
+                Reservation.start_time < end_time,
+                Reservation.end_time > start_time,
+            )
+            .exists()
+        )
+        smtm = smtm.where(~overlapping)
+
+    # Conteo de recursos totales con filtros aplicados
+    count_smtm = select(func.count()).select_from(smtm.subquery())
     result_count = await db.execute(count_smtm)
     total_count = result_count.scalar_one()
+
+    # Paginación
+    result = await db.execute(smtm.offset(start).limit(limit))
+    resources = result.scalars().all()
 
     return resources, total_count
 

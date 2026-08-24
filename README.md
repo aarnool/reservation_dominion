@@ -120,6 +120,12 @@ La siguiente documentación visual resume la propuesta de diseño del proyecto y
 
 ![Flujo de registro](doc_draft/auth/register/diagrama-flujo-register.excalidraw.svg)
 
+### Diagrama de secuencia
+
+El siguiente diagrama describe el flujo principal de registro del usuario y la interacción entre cliente, API, capa de negocio y base de datos.
+
+![Diagrama de secuencia del registro](doc_draft/auth/register/diagrama-secuencial-register.excalidraw.svg)
+
 ---
 
 ## Instalación y Configuración

@@ -104,8 +104,8 @@ async def login_user(
         key="auth_token",
         value=auth_token,
         httponly=True,
-        secure=False,  # False for local dev
-        samesite="lax",
+        secure=True,  # False for local dev
+        samesite="none",
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
 

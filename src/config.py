@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: int
     DB_NAME: str
+    FRONTEND_URL_ADMIN: str
+    FRONTEND_URL_CLIENT: str
     SECRET_KEY: SecretStr
     RESEND_API_KEY: SecretStr
     R2_ACCOUNT_ID: str

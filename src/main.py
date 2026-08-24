@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.config import settings
 from src.domains.auth.router import router as auth_router
 from src.domains.notifications.router import router as notifications_router
 from src.domains.reservations.router import router as reservations_router
@@ -21,7 +22,9 @@ origins = [
     "http://localhost:8000",
     "http://localhost:5173",
     "http://localhost:5174",
-    "http://localhost:5175"
+    "http://localhost:5175",
+    settings.FRONTEND_URL_ADMIN,
+    settings.FRONTEND_URL_CLIENT,
 ]
 
 app.add_middleware(

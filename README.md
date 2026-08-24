@@ -86,6 +86,42 @@ El código fuente está estructurado por dominios de negocio:
 
 ---
 
+## Diagramas y arquitectura del sistema
+
+La siguiente documentación visual resume la propuesta de diseño del proyecto y ayuda a entender la estructura funcional del sistema.
+
+### Arquitectura conceptual
+
+![Arquitectura conceptual](doc_draft/general/tipo-arquitectura.png)
+
+### Arquitectura por componentes
+
+![Arquitectura por componentes](doc_draft/general/diagrama-arquitectura-componentes.excalidraw.svg)
+
+### Casos de uso
+
+![Casos de uso](doc_draft/general/diagrama-de-casos-uso.excalidraw.svg)
+
+### Modelo entidad-relación
+
+![Modelo entidad-relación](doc_draft/general/diagrama-entidad-relacion.excalidraw.svg)
+
+### Diagrama de despliegue
+
+![Diagrama de despliegue](doc_draft/general/diagrama-despliegue.excalidraw.svg)
+
+### Flujo de autenticación
+
+#### Login
+
+![Flujo de login](doc_draft/auth/login/diagrama-flujo-login.excalidraw.svg)
+
+#### Registro
+
+![Flujo de registro](doc_draft/auth/register/diagrama-flujo-register.excalidraw.svg)
+
+---
+
 ## Instalación y Configuración
 
 ### 1. Clonar el Repositorio

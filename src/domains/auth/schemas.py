@@ -17,6 +17,21 @@ class UserBase(BaseModel):
     last_name: str = Field(description="Apellido del usuario", examples=["Diestra"])
 
 
+# Schema para la actualización de perfil de usuario
+class UserUpdate(BaseModel):
+    first_name: str | None = Field(default=None, description="Nuevo primer nombre del usuario", examples=["Arnol Nuevo"])
+    last_name: str | None = Field(default=None, description="Nuevo apellido del usuario", examples=["Diestra Update"])
+
+def user_update_from_form(
+    first_name: str | None = Form(None),
+    last_name: str | None = Form(None),
+) -> UserUpdate:
+    return UserUpdate(
+        first_name=first_name,
+        last_name=last_name,
+    )
+
+
 # Schema para la creación de usuarios
 class UserCreate(UserBase):
     password: str = Field(
@@ -55,6 +70,11 @@ class UserResponse(UserBase):
     updated_at: datetime = Field(
         description="Fecha y hora de la última actualización del usuario",
         examples=["2023-01-01T12:00:00"],
+    )
+    role_id: int = Field(
+        description="ID del rol del usuario (1 = Cliente, 2 = Admin)",
+        examples=[1, 2],
+        default=1
     )
 
     model_config = {

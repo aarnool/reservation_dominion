@@ -1,10 +1,20 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, Security, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Response,
+    Security,
+    UploadFile,
+    status,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.security import valiate_image_file
 from src.dependencies import get_current_user, get_db
-from src.domains.auth.schemas import UserResponse
+from src.domains.auth.schemas import UserResponse, UserUpdate, user_update_from_form
 from src.domains.users import service
 
 router = APIRouter(
@@ -43,6 +53,59 @@ async def get_all_users(
 
     response.headers["X-Total-Count"] = str(total)
     return users
+
+
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Obtiene el perfil del usuario autenticado (TODOS LOS USUARIOS 👥)",
+)
+async def get_current_user_profile(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[dict, Security(get_current_user, scopes=[])],
+):
+    """
+
+    ### **REQUIERE ESTAR AUTENTICADO 👥🔓**
+    Obtiene el perfil del usuario que está actualmente autenticado.
+
+    """
+    user_id = current_user.get("id")
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario no autenticado",
+        )
+    return await service.get_user_by_id(db=db, user_id=user_id)
+
+
+@router.patch(
+    "/me",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Actualiza el perfil del usuario autenticado (TODOS LOS USUARIOS 👥)",
+)
+async def update_current_user_profile(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[dict, Security(get_current_user, scopes=[])],
+    user_update: Annotated[UserUpdate, Depends(user_update_from_form)],
+    file: Annotated[UploadFile | None, Depends(valiate_image_file)] = None,
+):
+    """
+    ### **REQUIERE ESTAR AUTENTICADO 👥🔓**
+    Actualiza el perfil del usuario que está actualmente autenticado (incluye avatar opcional).
+    """
+    user_id = current_user.get("id")
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario no autenticado",
+        )
+    return await service.update_user(
+        db=db, user_id=user_id, user_update=user_update, avatar=file
+    )
 
 
 @router.get(

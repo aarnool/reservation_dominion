@@ -6,9 +6,7 @@ ROLES_SCOOPES = {
         "resources:update",
         "resources:delete",
         # Permisos de Reservaciones
-        "reservations:create",
         "reservations:read",
-        "reservations:update",
         "reservations:delete",
         "reservations:approve",
         "reservations:read_all",
